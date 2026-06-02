@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FamilienAusflug – Ausflugstipps fürs Wetter</title>
+  <meta name="description" content="Wetterbasierte Ausflugstipps für Familien mit Kleinkind (2–3 Jahre)">
+  <meta name="theme-color" content="#3B82F6">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:        #3B82F6;
+      --primary-dark:   #1D4ED8;
+      --primary-light:  #EFF6FF;
+      --accent:         #F59E0B;
+      --accent-light:   #FFFBEB;
+      --success:        #10B981;
+      --success-light:  #ECFDF5;
+      --warning:        #F59E0B;
+      --danger:         #EF4444;
+      --c-bg:           #F8FAFC;
+      --c-surface:      #FFFFFF;
+      --c-border:       #E2E8F0;
+      --c-border-muted: #F1F5F9;
+      --c-text:         #1E293B;
+      --c-text-2:       #475569;
+      --c-text-3:       #94A3B8;
+      --c-tag-bg:       #F1F5F9;
+      --radius-sm:  8px;
+      --radius-md:  12px;
+      --radius-lg:  16px;
+      --radius-xl:  24px;
+      --shadow-xs:  0 1px 2px rgba(0,0,0,.06);
+      --shadow-sm:  0 1px 4px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+      --shadow-md:  0 4px 12px rgba(0,0,0,.09), 0 2px 4px rgba(0,0,0,.06);
+      --shadow-lg:  0 12px 32px rgba(0,0,0,.11), 0 4px 8px rgba(0,0,0,.06);
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      --ease: 180ms cubic-bezier(.4,0,.2,1);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --c-bg:           #0F172A;
+        --c-surface:      #1E293B;
+        --c-border:       #334155;
+        --c-border-muted: #1E293B;
+        --c-text:         #F1F5F9;
+        --c-text-2:       #CBD5E1;
+        --c-text-3:       #64748B;
+        --c-tag-bg:       #334155;
+        --primary-light:  #1E3A5F;
+        --success-light:  #052E16;
+        --accent-light:   #292524;
+      }
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--c-bg);
+      color: var(--c-text);
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── HEADER ── */
+    .app-header {
+      background: linear-gradient(150deg, #2563EB 0%, #1D4ED8 60%, #1E40AF 100%);
+      color: #fff;
+      padding: 1rem 1.25rem 1.25rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 2px 12px rgba(29,78,216,.35);
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: .875rem;
+    }
+
+    .app-logo { font-size: 1.4rem; font-weight: 800; letter-spacing: -.02em; }
+    .app-logo span { opacity: .85; font-weight: 400; font-size: .9rem; display: block; }
+
+    .location-form {
+      display: flex;
+      gap: .5rem;
+      position: relative;
+    }
+
+    .loc-wrap {
+      flex: 1;
+      position: relative;
+      min-width: 0;
+    }
+
+    .loc-prefix {
+      position: absolute;
+      left: .7rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: .85rem;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .loc-input {
+      width: 100%;
+      padding: .6rem .8rem .6rem 2rem;
+      border: 1.5px solid rgba(255,255,255,.25);
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,.18);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      font-size: .9rem;
+      font-family: var(--font);
+      outline: none;
+      transition: background var(--ease), border-color var(--ease);
+    }
+    .loc-input::placeholder { color: rgba(255,255,255,.65); }
+    .loc-input:focus {
+      background: rgba(255,255,255,.28);
+      border-color: rgba(255,255,255,.55);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      padding: .58rem 1rem;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: var(--font);
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--ease);
+      white-space: nowrap;
+      user-select: none;
+    }
+    .btn:active { transform: scale(.97); }
+
+    .btn-white { background: #fff; color: var(--primary); }
+    .btn-white:hover { background: #EFF6FF; }
+
+    .btn-ghost {
+      background: rgba(255,255,255,.18);
+      color: #fff;
+      border: 1.5px solid rgba(255,255,255,.25);
+      padding: .58rem .7rem;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,.28); }
+
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); box-shadow: var(--shadow-md); }
+
+    .autocomplete {
+      position: absolute;
+      top: calc(100% + 5px);
+      left: 0; right: 0;
+      background: var(--c-surface);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lg);
+      z-index: 200;
+      overflow: hidden;
+      max-height: 220px;
+      overflow-y: auto;
+      border: 1px solid var(--c-border);
+    }
+
+    .ac-item {
+      padding: .6rem .9rem;
+      cursor: pointer;
+      color: var(--c-text-2);
+      font-size: .875rem;
+      border-bottom: 1px solid var(--c-border-muted);
+      transition: background var(--ease);
+    }
+    .ac-item:last-child { border-bottom: none; }
+    .ac-item:hover { background: var(--c-bg); color: var(--c-text); }
+
+    /* ── MAIN ── */
+    .main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.25rem;
+    }
+
+    /* ── LOCATION PROMPT ── */
+    .loc-prompt {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 3.5rem 1.5rem;
+      gap: 1rem;
+      animation: fadeUp .35s ease both;
+    }
+    .loc-prompt-icon { font-size: 3.5rem; }
+    .loc-prompt h2 { font-size: 1.4rem; font-weight: 700; color: var(--c-text); }
+    .loc-prompt p { color: var(--c-text-3); font-size: .95rem; max-width: 380px; line-height: 1.6; }
+
+    /* ── LOADING ── */
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem;
+      gap: .75rem;
+      color: var(--c-text-3);
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--c-border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin .75s linear infinite;
+    }
+
+    /* ── ERROR ── */
+    .error-bar {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      color: #991B1B;
+      font-size: .875rem;
+      margin-bottom: 1.25rem;
+      animation: fadeUp .25s ease;
+    }
+    @media (prefers-color-scheme: dark) {
+      .error-bar { background: #3B0A0A; border-color: #7F1D1D; color: #FCA5A5; }
+    }
+
+    /* ── WEATHER CARD ── */
+    .weather-section { margin-bottom: 1.25rem; animation: fadeUp .3s ease both; }
+
+    .weather-card {
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: .75rem;
+      box-shadow: var(--shadow-lg);
+      transition: background var(--ease);
+    }
+    .weather-card::after {
+      content: attr(data-weather-icon);
+      position: absolute;
+      right: -8px; top: -10px;
+      font-size: 7.5rem;
+      opacity: .12;
+      line-height: 1;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .wc-sunny       { background: linear-gradient(150deg, #F59E0B 0%, #D97706 100%); }
+    .wc-partly      { background: linear-gradient(150deg, #38BDF8 0%, #0284C7 100%); }
+    .wc-cloudy      { background: linear-gradient(150deg, #64748B 0%, #475569 100%); }
+    .wc-foggy       { background: linear-gradient(150deg, #94A3B8 0%, #64748B 100%); }
+    .wc-drizzle     { background: linear-gradient(150deg, #38BDF8 0%, #0369A1 100%); }
+    .wc-rainy       { background: linear-gradient(150deg, #2563EB 0%, #1E3A8A 100%); }
+    .wc-snowy       { background: linear-gradient(150deg, #BAE6FD 0%, #7DD3FC 100%); color: #1E40AF !important; }
+    .wc-stormy      { background: linear-gradient(150deg, #312E81 0%, #1E1B4B 100%); }
+
+    .wc-row1 { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: .75rem; }
+
+    .wc-temp { font-size: 3.75rem; font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+    .wc-feels { font-size: .8rem; opacity: .8; margin-top: .2rem; }
+
+    .wc-icon { font-size: 3.25rem; line-height: 1; }
+
+    .wc-label { font-size: 1.05rem; font-weight: 600; opacity: .92; margin-bottom: .6rem; }
+
+    .wc-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .75rem;
+    }
+    .wc-meta-item {
+      display: flex;
+      align-items: center;
+      gap: .3rem;
+      font-size: .82rem;
+      opacity: .9;
+      background: rgba(255,255,255,.15);
+      padding: .25rem .65rem;
+      border-radius: 100px;
+    }
+
+    .wc-minmax {
+      margin-top: .75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: .65rem;
+      font-size: .82rem;
+      background: rgba(255,255,255,.18);
+      padding: .3rem .75rem;
+      border-radius: 100px;
+    }
+
+    .wc-day-label {
+      position: absolute;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      opacity: .75;
+      background: rgba(255,255,255,.18);
+      padding: .18rem .65rem;
+      border-radius: 100px;
+    }
+
+    /* ── FORECAST STRIP ── */
+    .forecast-strip {
+      display: flex;
+      gap: .5rem;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+    .forecast-strip::-webkit-scrollbar { display: none; }
+
+    @media (min-width: 640px) {
+      .forecast-strip { display: grid; grid-template-columns: repeat(5, 1fr); }
+    }
+
+    .fc-day {
+      flex: 0 0 80px;
+      background: var(--c-surface);
+      border-radius: var(--radius-md);
+      padding: .7rem .5rem;
+      text-align: center;
+      cursor: pointer;
+      border: 2px solid transparent;
+      box-shadow: var(--shadow-xs);
+      transition: all var(--ease);
+    }
+    .fc-day:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .fc-day.active { border-color: var(--primary); background: var(--primary-light); }
+
+    .fc-name {
+      font-size: .7rem;
+      font-weight: 700;
+      color: var(--c-text-3);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: .25rem;
+    }
+    .fc-day.active .fc-name { color: var(--primary); }
+
+    .fc-icon { font-size: 1.5rem; display: block; margin-bottom: .25rem; }
+
+    .fc-temp { font-size: .75rem; color: var(--c-text-2); }
+    .fc-temp b { color: var(--c-text); font-weight: 700; }
+
+    .fc-rain { font-size: .68rem; color: #60A5FA; margin-top: .15rem; }
+
+    /* ── RECOMMENDATION BANNER ── */
+    .rec-banner {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      border-radius: var(--radius-lg);
+      padding: 1.1rem 1.25rem;
+      margin-bottom: 1.25rem;
+      border: 1px solid transparent;
+      animation: fadeUp .3s .05s ease both;
+    }
+    .rec-banner.good  { background: var(--success-light); border-color: rgba(16,185,129,.2); }
+    .rec-banner.mixed { background: var(--accent-light);  border-color: rgba(245,158,11,.2); }
+    .rec-banner.bad   { background: var(--primary-light); border-color: rgba(59,130,246,.2); }
+
+    .rec-emoji { font-size: 2rem; flex-shrink: 0; }
+
+    .rec-label {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      color: var(--c-text-3);
+      margin-bottom: .2rem;
+    }
+    .rec-title { font-size: 1rem; font-weight: 700; color: var(--c-text); line-height: 1.3; }
+    .rec-sub   { font-size: .82rem; color: var(--c-text-3); margin-top: .15rem; }
+
+    /* ── FILTERS ── */
+    .filters-section {
+      margin-bottom: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      animation: fadeUp .3s .1s ease both;
+    }
+
+    .filter-row {
+      display: flex;
+      gap: .4rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .filter-label {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--c-text-3);
+      flex-shrink: 0;
+      min-width: 56px;
+    }
+
+    .chip {
+      padding: .35rem .8rem;
+      border-radius: 100px;
+      border: 1.5px solid var(--c-border);
+      background: var(--c-surface);
+      color: var(--c-text-2);
+      font-size: .8rem;
+      font-weight: 500;
+      font-family: var(--font);
+      cursor: pointer;
+      transition: all var(--ease);
+      white-space: nowrap;
+    }
+    .chip:hover { border-color: var(--primary); color: var(--primary); }
+    .chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+    .filter-divider {
+      margin: 0 .25rem;
+      width: 1px;
+      height: 20px;
+      background: var(--c-border);
+      flex-shrink: 0;
+      align-self: center;
+    }
+
+    .btn-shuffle {
+      margin-left: auto;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 100px;
+      padding: .38rem .9rem;
+      font-family: var(--font);
+      font-size: .8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--ease);
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+    }
+    .btn-shuffle:hover { background: #D97706; transform: scale(1.03); }
+    .btn-shuffle:active { transform: scale(.97); }
+
+    .shuffle-icon { display: inline-block; transition: transform var(--ease); }
+    .btn-shuffle.spinning .shuffle-icon { animation: spin-once .45s ease; }
+
+    .btn-reset {
+      background: var(--c-tag-bg);
+      color: var(--c-text-3);
+      border: none;
+      border-radius: 100px;
+      padding: .35rem .8rem;
+      font-family: var(--font);
+      font-size: .8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--ease);
+    }
+    .btn-reset:hover { color: var(--c-text); background: var(--c-border); }
+
+    /* ── OUTINGS SECTION ── */
+    .outings-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      animation: fadeUp .3s .15s ease both;
+    }
+    .section-title { font-size: .95rem; font-weight: 700; color: var(--c-text); }
+    .count-pill {
+      background: var(--c-tag-bg);
+      color: var(--c-text-3);
+      font-size: .75rem;
+      font-weight: 600;
+      padding: .2rem .6rem;
+      border-radius: 100px;
+    }
+
+    /* ── OUTINGS GRID ── */
+    .outings-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    @media (min-width: 580px)  { .outings-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 900px)  { .outings-grid { grid-template-columns: repeat(3, 1fr); } }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1.5rem;
+      color: var(--c-text-3);
+      animation: fadeUp .25s ease;
+    }
+    .empty-state .es-icon { font-size: 2.5rem; margin-bottom: .75rem; display: block; }
+
+    /* ── OUTING CARD ── */
+    .outing-card {
+      background: var(--c-surface);
+      border-radius: var(--radius-lg);
+      border: 2px solid transparent;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      transition: transform var(--ease), box-shadow var(--ease), opacity var(--ease);
+      animation: fadeUp .3s ease both;
+      overflow: hidden;
+    }
+    .outing-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+    .outing-card.tier-high  { border-color: var(--success); }
+    .outing-card.tier-mid   { border-color: var(--accent); }
+    .outing-card.tier-low   { opacity: .58; }
+
+    .card-header {
+      padding: 1.1rem 1.1rem 0;
+      display: flex;
+      align-items: flex-start;
+      gap: .65rem;
+    }
+
+    .card-icon { font-size: 2.25rem; line-height: 1; flex-shrink: 0; margin-top: .05rem; }
+
+    .card-title-wrap { flex: 1; min-width: 0; }
+    .card-title { font-size: .975rem; font-weight: 700; color: var(--c-text); line-height: 1.3; }
+
+    .score-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .22rem;
+      font-size: .7rem;
+      font-weight: 600;
+      padding: .15rem .5rem;
+      border-radius: 100px;
+      margin-top: .25rem;
+    }
+    .score-pill.high { background: var(--success-light); color: var(--success); }
+    .score-pill.mid  { background: var(--accent-light);  color: #B45309; }
+    .score-pill.low  { background: var(--c-tag-bg);      color: var(--c-text-3); }
+
+    .fav-btn {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: var(--c-border);
+      padding: .2rem;
+      margin-top: -.1rem;
+      transition: color var(--ease), transform var(--ease);
+      line-height: 1;
+    }
+    .fav-btn:hover { color: var(--accent); transform: scale(1.25); }
+    .fav-btn.on    { color: var(--accent); }
+
+    .card-desc {
+      flex: 1;
+      padding: .7rem 1.1rem;
+      font-size: .855rem;
+      color: var(--c-text-2);
+      line-height: 1.58;
+    }
+
+    .card-tags {
+      padding: 0 1.1rem .6rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .3rem;
+    }
+    .tag {
+      background: var(--c-tag-bg);
+      color: var(--c-text-3);
+      font-size: .7rem;
+      font-weight: 500;
+      padding: .18rem .5rem;
+      border-radius: 100px;
+    }
+    .tag.free { background: #ECFDF5; color: #065F46; }
+    @media (prefers-color-scheme: dark) { .tag.free { background: #052E16; color: #6EE7B7; } }
+
+    .card-meta {
+      padding: .65rem 1.1rem;
+      border-top: 1px solid var(--c-border-muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem .8rem;
+      align-items: center;
+    }
+    .meta-item {
+      font-size: .78rem;
+      color: var(--c-text-3);
+      display: flex;
+      align-items: center;
+      gap: .2rem;
+    }
+
+    .card-tip {
+      background: var(--primary-light);
+      padding: .7rem 1.1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: .5rem;
+      font-size: .795rem;
+      color: var(--c-text-2);
+      line-height: 1.5;
+    }
+    .tip-icon { flex-shrink: 0; margin-top: .05rem; }
+
+    /* ── FOOTER ── */
+    .app-footer {
+      text-align: center;
+      padding: 2.5rem 1.25rem;
+      color: var(--c-text-3);
+      font-size: .78rem;
+      border-top: 1px solid var(--c-border-muted);
+    }
+    .app-footer a { color: var(--primary); text-decoration: none; }
+    .app-footer a:hover { text-decoration: underline; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes spin-once { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-top">
+        <div class="app-logo">
+          🧭 FamilienAusflug
+          <span>Ausflugstipps fürs Wetter · 2–3 Jahre</span>
+        </div>
+      </div>
+      <form class="location-form" id="locForm" onsubmit="return false;">
+        <div class="loc-wrap">
+          <span class="loc-prefix">📍</span>
+          <input
+            type="text"
+            class="loc-input"
+            id="locInput"
+            placeholder="Ort oder PLZ eingeben…"
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <div class="autocomplete" id="acList" style="display:none"></div>
+        </div>
+        <button type="button" class="btn btn-white" id="searchBtn">Suchen</button>
+        <button type="button" class="btn btn-ghost" id="geoBtn" title="Standort ermitteln">📡</button>
+      </form>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main" id="appMain"></main>
+
+  <!-- FOOTER -->
+  <footer class="app-footer">
+    Wetterdaten: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>
+    &nbsp;·&nbsp; Standortsuche: <a href="https://nominatim.org/" target="_blank" rel="noopener">Nominatim / OpenStreetMap</a>
+    &nbsp;·&nbsp; Keine Anmeldung, keine Cookies
+  </footer>
+
+  <script>
+    /* ================================================================
+       DATA – Ausflugstipps (2–3 Jahre)
+    ================================================================ */
+    const OUTINGS = [
+      {
+        id: 'spielplatz',
+        icon: '🛝',
+        title: 'Spielplatz im Freien',
+        desc: 'Klettern, Rutschen, Schaukeln – der Klassiker für Kleinkinder. Ein guter Spielplatz bietet Bewegungsfreiheit und die Möglichkeit, andere Kinder zu treffen. Ideal für die motorische Entwicklung.',
+        category: 'outdoor',
+        tags: ['kostenlos', 'bewegung', 'sozial', 'natur'],
+        duration: 'mittel',
+        energy: 'aktiv',
+        ideal:  ['sunny', 'partly_cloudy'],
+        ok:     ['cloudy'],
+        avoid:  ['rainy', 'stormy', 'snowy', 'drizzle'],
+        minTemp: 8, maxTemp: 33, maxWind: 30, maxRain: 25,
+        tips: [
+          'Sonnencreme & Hut einpacken – auch bei bewölktem Himmel',
+          'Snacks und ausreichend Wasser nicht vergessen',
+          'Wechselkleidung für den Sandkasten empfohlen'
+        ]
+      },
+      {
+        id: 'wildpark',
+        icon: '🦌',
+        title: 'Wildpark oder Tierpark',
+        desc: 'Rehe, Wildschweine, Vögel und mehr: Wildparks sind ideal für Kleinkinder. Viele Parks haben Streichelzonen und kurze, kindgerechte Wege. Fühlen, sehen, staunen – pures Kindheitsglück.',
+        category: 'outdoor',
+        tags: ['natur', 'tiere', 'bildung', 'erlebnis'],
+        duration: 'mittel',
+        energy: 'aktiv',
+        ideal:  ['sunny', 'partly_cloudy', 'cloudy'],
+        ok:     ['drizzle'],
+        avoid:  ['stormy'],
+        minTemp: 4, maxTemp: 32, maxWind: 40, maxRain: 45,
+        tips: [
+          'Futter often erlaubt – vorher beim Park erfragen',
+          'Kinderwagen meist möglich, feste Schuhe empfohlen',
+          'Ruhige Zeiten: Wochentag-Vormittag'
+        ]
+      },
+      {
+        id: 'bauernhof',
+        icon: '🐄',
+        title: 'Bauernhof-Besuch',
+        desc: 'Kühe, Ziegen und Hühner hautnah erleben. Viele Bauernhöfe bieten Führungen, Melkvorführungen und Streichelgehege an – ein unvergessliches, bodenständiges Erlebnis für die Kleinen.',
+        category: 'outdoor',
+        tags: ['natur', 'tiere', 'bildung', 'erlebnis'],
+        duration: 'mittel',
+        energy: 'ruhig',
+        ideal:  ['sunny', 'partly_cloudy', 'cloudy'],
+        ok:     ['drizzle'],
+        avoid:  ['stormy'],
+        minTemp: 4, maxTemp: 32, maxWind: 40, maxRain: 50,
+        tips: [
+          'Gummistiefel sind ein Muss – immer!',
+          'Hofläden haben oft leckere frische Produkte',
+          'Vorher anrufen und Besuch ankündigen'
+        ]
+      },
+      {
+        id: 'hallenspielplatz',
+        icon: '🎪',
+        title: 'Hallenspielplatz & Bällebad',
+        desc: 'Großes Indoor-Spielparadies mit Kletterburgen, Rutschen, Trampolinen und Bällebad. Bei jedem Wetter nutzbar und speziell auf die Altersgruppe 2–4 Jahre ausgelegt.',
+        category: 'indoor',
+        tags: ['drinnen', 'bewegung', 'sozial', 'spaß'],
+        duration: 'mittel',
+        energy: 'sehr_aktiv',
+        ideal:  ['rainy', 'stormy', 'snowy', 'drizzle', 'foggy'],
+        ok:     ['cloudy'],
+        avoid:  [],
+        minTemp: null, maxTemp: null, maxWind: null, maxRain: null,
+        tips: [
+          'Socken mitbringen – meist Pflicht!',
+          'Unter der Woche oft leerer und günstiger',
+          'Kleinen Snack für die Kaffeepause einpacken'
+        ]
+      },
+      {
+        id: 'schwimmbad',
+        icon: '🏊',
+        title: 'Hallenbad mit Kinderbecken',
+        desc: 'Planschen, Rutschen, Spritzen: Kleinkinder lieben Wasser! Hallenbäder mit flachen Kinderbecken und kleinen Wasserrutschen bieten ganzjährigen Spaß – egal ob Regen oder Sonne.',
+        category: 'indoor',
+        tags: ['drinnen', 'wasser', 'bewegung', 'spaß'],
+        duration: 'mittel',
+        energy: 'aktiv',
+        ideal:  ['rainy', 'stormy', 'snowy', 'drizzle', 'cloudy'],
+        ok:     ['sunny', 'partly_cloudy'],
+        avoid:  [],
+        minTemp: null, maxTemp: null, maxWind: null, maxRain: null,
+        tips: [
+          'Schwimmwindeln nicht vergessen',
+          'Frühzeitig kommen – Vormittags ruhiger',
+          'Kleine Spielzeuge (Gießkanne, Becher) erlaubt'
+        ]
+      },
+      {
+        id: 'bibliothek',
+        icon: '📚',
+        title: 'Kinderbibliothek',
+        desc: 'Viele Bibliotheken haben liebevoll gestaltete Kinderbereiche mit Bilderbüchern, gemütlichen Leseecken und regelmäßigen Vorlese-Stunden. Kostenlos und in fast jeder Stadt verfügbar.',
+        category: 'indoor',
+        tags: ['kostenlos', 'drinnen', 'bildung', 'entspannt'],
+        duration: 'kurz',
+        energy: 'ruhig',
+        ideal:  ['rainy', 'stormy', 'snowy', 'drizzle', 'foggy', 'cloudy'],
+        ok:     ['sunny', 'partly_cloudy'],
+        avoid:  [],
+        minTemp: null, maxTemp: null, maxWind: null, maxRain: null,
+        tips: [
+          'Bibliotheksausweis kostenlos beantragen',
+          'Regelmäßige Vorlese-Veranstaltungen für Kleinkinder erfragen',
+          'Gute Gelegenheit: Ruhiges Verhalten üben'
+        ]
+      },
+      {
+        id: 'mitmachmuseum',
+        icon: '🔬',
+        title: 'Mitmachmuseum / Kindermuseum',
+        desc: 'Interaktive Ausstellungen zum Anfassen, Ausprobieren und Entdecken. Speziell für Kleinkinder entwickelte Museen bieten haptische Experimente, Baustationen und Rollenspiele.',
+        category: 'indoor',
+        tags: ['drinnen', 'bildung', 'erlebnis', 'kreativ'],
+        duration: 'ganztags',
+        energy: 'aktiv',
+        ideal:  ['rainy', 'stormy', 'snowy', 'drizzle'],
+        ok:     ['cloudy', 'foggy'],
+        avoid:  [],
+        minTemp: null, maxTemp: null, maxWind: null, maxRain: null,
+        tips: [
+          'Online-Tickets oft günstiger als an der Kasse',
+          'Mittagspause & Ruhepause einplanen',
+          'Kind bestimmt die Route – kein Stress!'
+        ]
+      },
+      {
+        id: 'waldspaziergang',
+        icon: '🌲',
+        title: 'Waldspaziergang & Naturentdeckung',
+        desc: 'Der Wald ist das natürliche Klassenzimmer für Kleinkinder. Stöcke sammeln, Moos anfassen, Vögel beobachten, Pilze suchen – im Wald wird jeder Weg zum Abenteuer.',
+        category: 'outdoor',
+        tags: ['kostenlos', 'natur', 'bewegung', 'entspannt'],
+        duration: 'mittel',
+        energy: 'aktiv',
+        ideal:  ['sunny', 'partly_cloudy', 'cloudy'],
+        ok:     ['drizzle'],
+        avoid:  ['stormy'],
+        minTemp: 4, maxTemp: 30, maxWind: 35, maxRain: 40,
+        tips: [
+          'Gummistiefel ideal bei feuchtem Waldboden',
+          'Lupe oder kleines Gefäß zum Sammeln mitnehmen',
+          'Nach Zecken schauen – lange Kleidung empfohlen'
+        ]
+      },
+      {
+        id: 'picknick',
+        icon: '🧺',
+        title: 'Picknick im Park',
+        desc: 'Decke ausbreiten, Obstspieße & Sandwiches genießen, Bälle rollen lassen. Ein Picknick ist entspannt, günstig und schafft tolle Familienmomente. Mit Seifenblasen und Kreide wird es perfekt.',
+        category: 'outdoor',
+        tags: ['kostenlos', 'natur', 'entspannt', 'kreativ'],
+        duration: 'mittel',
+        energy: 'ruhig',
+        ideal:  ['sunny', 'partly_cloudy'],
+        ok:     [],
+        avoid:  ['rainy', 'stormy', 'snowy', 'drizzle', 'cloudy', 'foggy'],
+        minTemp: 16, maxTemp: 30, maxWind: 18, maxRain: 15,
+        tips: [
+          'Seifenblasen und Straßenkreide dazupacken',
+          'Ameisensichere Behälter und Decke einplanen',
+          'Sonnenschutz auch auf schattigen Wiesen wichtig'
+        ]
+      },
+      {
+        id: 'fahrradtour',
+        icon: '🚴',
+        title: 'Fahrradtour mit Anhänger',
+        desc: 'Mit Fahrradanhänger oder Kindersitz lassen sich wunderschöne Touren machen. Kleinkinder genießen das Mitfahren, schlafen manchmal dabei ein und entdecken die Umgebung aus einer neuen Perspektive.',
+        category: 'outdoor',
+        tags: ['bewegung', 'natur', 'entspannt'],
+        duration: 'mittel',
+        energy: 'ruhig',
+        ideal:  ['sunny', 'partly_cloudy'],
+        ok:     ['cloudy'],
+        avoid:  ['rainy', 'stormy', 'snowy'],
+        minTemp: 10, maxTemp: 30, maxWind: 22, maxRain: 20,
+        tips: [
+          'Helm für das Kind ist Pflicht!',
+          'Kürzere Strecken einplanen als gedacht',
+          'Snacks und Getränk im Anhänger verstaut halten'
+        ]
+      },
+      {
+        id: 'puppentheater',
+        icon: '🎭',
+        title: 'Puppentheater / Kindertheater',
+        desc: 'Kleinkinder sind von Handpuppen und kleinen Bühnen magisch fasziniert. Kurze Stücke von 30–40 Minuten passen perfekt zur Aufmerksamkeitsspanne der Kleinen. Oft auch kostenlos bei Stadtfesten.',
+        category: 'indoor',
+        tags: ['drinnen', 'kultur', 'erlebnis'],
+        duration: 'kurz',
+        energy: 'ruhig',
+        ideal:  ['rainy', 'stormy', 'snowy', 'drizzle'],
+        ok:     ['cloudy', 'foggy'],
+        avoid:  [],
+        minTemp: null, maxTemp: null, maxWind: null, maxRain: null,
+        tips: [
+          'Stücke für "ab 2 Jahren" im Programm suchen',
+          'Kind vorab auf ruhiges Zuschauen vorbereiten',
+          'Früh da sein – gute Plätze sichern'
+        ]
+      },
+      {
+        id: 'see',
+        icon: '🦆',
+        title: 'Enten füttern am See',
+        desc: 'Enten, Schwäne und Frösche beobachten, Steine ins Wasser werfen und am Ufer spielen – Kleinkinder am Wasser sind in ihrem Element. Einfach, kostenlos und immer ein kleines Abenteuer.',
+        category: 'outdoor',
+        tags: ['kostenlos', 'natur', 'tiere', 'entspannt'],
+        duration: 'kurz',
+        energy: 'ruhig',
+        ideal:  ['sunny', 'partly_cloudy', 'cloudy'],
+        ok:     ['drizzle'],
+        avoid:  ['stormy'],
+        minTemp: 7, maxTemp: 32, maxWind: 30, maxRain: 35,
+        tips: [
+          'Brot oder Körner zum Füttern einpacken',
+          'Kinder immer nah am Wasser im Blick behalten',
+          'Gummistiefel bei feuchtem Ufer praktisch'
+        ]
+      },
+      {
+        id: 'softplay',
+        icon: '🧸',
+        title: 'Softplay-Center',
+        desc: 'Gepolsterte Kletterstrukturen, Tunnels, Rutschen und Hüpfburgen – ein sicherer Bewegungsraum speziell für Kleinkinder. Bei jedem Wetter nutzbar, Eltern können dabei entspannen.',
+        category: 'indoor',
+        tags: ['drinnen', 'bewegung', 'sozial', 'sicher'],
+        duration: 'mittel',
+        energy: 'sehr_aktiv',
+        ideal:  ['rainy', 'stormy', 'snowy', 'drizzle'],
+        ok:     ['cloudy', 'foggy'],
+        avoid:  [],
+        minTemp: null, maxTemp: null, maxWind: null, maxRain: null,
+        tips: [
+          'Socken mitbringen (meist Pflicht)',
+          'Kaffee für Eltern fast immer erhältlich',
+          'Hygiene-Tuch für Hände mitnehmen'
+        ]
+      },
+      {
+        id: 'markt',
+        icon: '🛒',
+        title: 'Wochenmarkt-Bummel',
+        desc: 'Buntes Treiben, Farben, frische Düfte und Kostproben: Ein Wochenmarkt ist für alle Sinne ein Erlebnis. Kleinkinder lieben das Treiben und können erste Einkaufserfahrungen machen.',
+        category: 'mixed',
+        tags: ['kostenlos', 'erlebnis', 'sozial', 'bildung'],
+        duration: 'kurz',
+        energy: 'ruhig',
+        ideal:  ['sunny', 'partly_cloudy', 'cloudy'],
+        ok:     ['drizzle'],
+        avoid:  ['stormy'],
+        minTemp: 4, maxTemp: 32, maxWind: 35, maxRain: 40,
+        tips: [
+          'Kleines Budget für Kostproben einplanen',
+          'Früh kommen: weniger Gedränge, freundlichere Händler',
+          'Rucksacktrage oder schmaler Buggy praktisch'
+        ]
+      },
+      {
+        id: 'minigolf',
+        icon: '⛳',
+        title: 'Minigolf',
+        desc: 'Auch Zweijährige haben riesigen Spaß beim Schlagen und Rollen. Minigolf ist wenig anstrengend, macht der ganzen Familie Freude und bietet den Kleinen erste Erfolgserlebnisse.',
+        category: 'outdoor',
+        tags: ['spaß', 'sozial', 'entspannt'],
+        duration: 'mittel',
+        energy: 'ruhig',
+        ideal:  ['sunny', 'partly_cloudy'],
+        ok:     ['cloudy'],
+        avoid:  ['rainy', 'stormy', 'snowy'],
+        minTemp: 12, maxTemp: 30, maxWind: 25, maxRain: 20,
+        tips: [
+          'Eigene Regeln erlaubt – Hauptsache Spaß!',
+          'Nachmittags oder wochentags oft günstiger',
+          'Sonnenschutz & Getränk mitnehmen'
+        ]
+      },
+      {
+        id: 'naturkundemuseum',
+        icon: '🦕',
+        title: 'Naturkundemuseum',
+        desc: 'Dinosaurier-Skelette, ausgestopfte Tiere, glänzende Minerale – Naturkundemuseen faszinieren die Kleinen und regen die Fantasie an. Ein lehrreicher Ausflug, der keine Erklärungen braucht.',
+        category: 'indoor',
+        tags: ['drinnen', 'bildung', 'erlebnis'],
+        duration: 'mittel',
+        energy: 'ruhig',
+        ideal:  ['rainy', 'stormy', 'snowy', 'drizzle'],
+        ok:     ['cloudy', 'foggy'],
+        avoid:  [],
+        minTemp: null, maxTemp: null, maxWind: null, maxRain: null,
+        tips: [
+          'Kinderführungen oder -audioguides erfragen',
+          '"Was siehst du?" spielen statt alles erklären',
+          'Ruhige Wochentage bevorzugen'
+        ]
+      },
+      {
+        id: 'backen',
+        icon: '🍪',
+        title: 'Gemeinsam Backen oder Kochen',
+        desc: 'Teig kneten, Kekse ausstechen, Waffeln verzieren – Backen ist ein sensorisches Highlight für Kleinkinder und das Ergebnis darf anschließend genossen werden. Perfekt für einen verregneten Tag.',
+        category: 'indoor',
+        tags: ['kostenlos', 'drinnen', 'kreativ', 'entspannt'],
+        duration: 'mittel',
+        energy: 'ruhig',
+        ideal:  ['rainy', 'stormy', 'snowy', 'drizzle'],
+        ok:     ['cloudy', 'foggy'],
+        avoid:  [],
+        minTemp: null, maxTemp: null, maxWind: null, maxRain: null,
+        tips: [
+          'Schürze für das Kind bereitstellen',
+          'Einfache Rezepte: Butterkekse, Waffeln, Pfannkuchen',
+          'Sauerei gehört dazu – Spaß wichtiger als Ordnung!'
+        ]
+      },
+      {
+        id: 'botanischer_garten',
+        icon: '🌸',
+        title: 'Botanischer Garten',
+        desc: 'Farbenfrohe Blumenbeete, tropische Gewächshäuser und weitläufige Wege zum Entdecken. Botanische Gärten bieten Natur in allen Jahreszeiten – die Gewächshäuser sind auch bei Regen warm.',
+        category: 'mixed',
+        tags: ['natur', 'bildung', 'entspannt'],
+        duration: 'mittel',
+        energy: 'ruhig',
+        ideal:  ['sunny', 'partly_cloudy', 'cloudy'],
+        ok:     ['drizzle'],
+        avoid:  ['stormy'],
+        minTemp: 5, maxTemp: 32, maxWind: 40, maxRain: 45,
+        tips: [
+          'Gewächshäuser sind auch bei Regen warm und schön',
+          'Blumen-Rate-Spiel mit dem Kind spielen',
+          'Picknick auf Rasenflächen oft erlaubt'
+        ]
+      },
+      {
+        id: 'planschbecken',
+        icon: '🏖️',
+        title: 'Planschbecken & Sandspiel',
+        desc: 'Bei warmem Sommerwetter ist das Planschbecken im eigenen Garten oder auf dem Balkon der absolute Favorit. Mit Sand buddeln, Wasser schütten und matschen – Kinder-Glück pur.',
+        category: 'outdoor',
+        tags: ['kostenlos', 'wasser', 'kreativ', 'bewegung'],
+        duration: 'ganztags',
+        energy: 'aktiv',
+        ideal:  ['sunny'],
+        ok:     ['partly_cloudy'],
+        avoid:  ['rainy', 'stormy', 'snowy', 'drizzle', 'cloudy', 'foggy'],
+        minTemp: 22, maxTemp: 35, maxWind: 18, maxRain: 10,
+        tips: [
+          'Sonnencreme alle 2 Stunden erneuern',
+          'Sonnensegel für ausreichend Schatten aufstellen',
+          'Viel Trinken nicht vergessen!'
+        ]
+      }
+    ];
+
+    /* ================================================================
+       CONSTANTS
+    ================================================================ */
+    const CONDITIONS = {
+      sunny:        { label: 'Sonnig',          icon: '☀️',  cls: 'wc-sunny'   },
+      partly_cloudy:{ label: 'Teilw. bewölkt',  icon: '⛅',  cls: 'wc-partly'  },
+      cloudy:       { label: 'Bewölkt',          icon: '☁️',  cls: 'wc-cloudy'  },
+      foggy:        { label: 'Neblig',           icon: '🌫️', cls: 'wc-foggy'   },
+      drizzle:      { label: 'Nieselregen',      icon: '🌦️', cls: 'wc-drizzle' },
+      rainy:        { label: 'Regnerisch',       icon: '🌧️', cls: 'wc-rainy'   },
+      snowy:        { label: 'Schnee',           icon: '❄️',  cls: 'wc-snowy'   },
+      stormy:       { label: 'Gewitter',         icon: '⛈️', cls: 'wc-stormy'  }
+    };
+
+    const DURATION_MAP = {
+      kurz:     '⏱ Unter 1 Std.',
+      mittel:   '⏱ 1–3 Std.',
+      ganztags: '⏱ Ganztags'
+    };
+
+    const ENERGY_MAP = {
+      ruhig:     '😌 Entspannt',
+      aktiv:     '🏃 Aktiv',
+      sehr_aktiv:'⚡ Sehr aktiv'
+    };
+
+    const WEEKDAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+
+    /* ================================================================
+       STATE
+    ================================================================ */
+    const S = {
+      location:    null,
+      weatherRaw:  null,
+      weather:     null,
+      forecast:    [],
+      activeDay:   0,
+      filter:      { type: 'all', duration: 'all', energy: 'all' },
+      favorites:   JSON.parse(localStorage.getItem('fav_v1') || '[]'),
+      seed:        0,
+      loading:     false,
+      error:       null
+    };
+
+    /* ================================================================
+       API
+    ================================================================ */
+    async function geocode(query) {
+      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=de&format=json`;
+      const r = await fetch(url);
+      if (!r.ok) throw new Error('Geocoding fehlgeschlagen');
+      const d = await r.json();
+      return d.results || [];
+    }
+
+    async function reverseGeocode(lat, lon) {
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=de`;
+      const r = await fetch(url, { headers: { 'Accept-Language': 'de' } });
+      const d = await r.json();
+      return d.address?.city || d.address?.town || d.address?.village || 'Mein Standort';
+    }
+
+    async function fetchWeather(lat, lon) {
+      const p = new URLSearchParams({
+        latitude: lat,
+        longitude: lon,
+        current: 'temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m',
+        daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max',
+        timezone: 'auto',
+        forecast_days: 5,
+        wind_speed_unit: 'kmh'
+      });
+      const r = await fetch(`https://api.open-meteo.com/v1/forecast?${p}`);
+      if (!r.ok) throw new Error('Wetterdaten konnten nicht geladen werden');
+      return r.json();
+    }
+
+    function conditionFromCode(code) {
+      if (code === 0)                          return 'sunny';
+      if (code === 1 || code === 2)            return 'partly_cloudy';
+      if (code === 3)                          return 'cloudy';
+      if (code === 45 || code === 48)          return 'foggy';
+      if (code >= 51 && code <= 57)            return 'drizzle';
+      if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return 'rainy';
+      if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return 'snowy';
+      if (code >= 95)                          return 'stormy';
+      return 'cloudy';
+    }
+
+    function parseWeather(raw, dayIdx) {
+      const c = raw.current;
+      const d = raw.daily;
+      const rain = d.precipitation_probability_max[dayIdx] ?? 0;
+      const wind = Math.round(d.wind_speed_10m_max[dayIdx] ?? 0);
+
+      if (dayIdx === 0) {
+        return {
+          temp:      Math.round(c.temperature_2m),
+          feels:     Math.round(c.apparent_temperature),
+          condition: conditionFromCode(c.weather_code),
+          wind:      Math.round(c.wind_speed_10m),
+          rain:      rain,
+          humidity:  c.relative_humidity_2m,
+          tMin:      Math.round(d.temperature_2m_min[0]),
+          tMax:      Math.round(d.temperature_2m_max[0])
+        };
+      }
+      const tMin = Math.round(d.temperature_2m_min[dayIdx]);
+      const tMax = Math.round(d.temperature_2m_max[dayIdx]);
+      return {
+        temp:      Math.round((tMax + tMin) / 2),
+        feels:     Math.round((tMax + tMin) / 2) - 2,
+        condition: conditionFromCode(d.weather_code[dayIdx]),
+        wind,
+        rain,
+        humidity:  null,
+        tMin,
+        tMax
+      };
+    }
+
+    function parseForecast(raw) {
+      return raw.daily.time.map((dateStr, i) => ({
+        date:      new Date(dateStr + 'T12:00:00'),
+        condition: conditionFromCode(raw.daily.weather_code[i]),
+        tMin:      Math.round(raw.daily.temperature_2m_min[i]),
+        tMax:      Math.round(raw.daily.temperature_2m_max[i]),
+        rain:      raw.daily.precipitation_probability_max[i] ?? 0
+      }));
+    }
+
+    /* ================================================================
+       SCORING
+    ================================================================ */
+    function scoreOuting(o, w) {
+      let s = 50;
+      const { condition, temp, wind, rain } = w;
+
+      if      (o.ideal.includes(condition)) s += 35;
+      else if (o.ok.includes(condition))    s += 10;
+      else if (o.avoid.includes(condition)) s -= 45;
+
+      if (o.minTemp !== null && temp < o.minTemp)
+        s -= Math.min(28, (o.minTemp - temp) * 2.5);
+      if (o.maxTemp !== null && temp > o.maxTemp)
+        s -= Math.min(15, (temp - o.maxTemp) * 2);
+      if (o.maxWind !== null && wind > o.maxWind)
+        s -= Math.min(20, (wind - o.maxWind) * 1.2);
+      if (o.category === 'outdoor' && o.maxRain !== null && rain > o.maxRain)
+        s -= Math.min(25, (rain - o.maxRain) * 0.45);
+
+      if (o.category === 'indoor' && ['rainy','stormy','snowy','drizzle'].includes(condition))
+        s += 15;
+      if (o.category === 'outdoor' && condition === 'sunny')
+        s += 5;
+
+      return Math.max(0, Math.min(100, Math.round(s)));
+    }
+
+    function tier(score) {
+      if (score >= 75) return 'high';
+      if (score >= 45) return 'mid';
+      return 'low';
+    }
+
+    function scoreLabel(score) {
+      if (score >= 75) return '✓ Perfekt geeignet';
+      if (score >= 45) return '~ Gut geeignet';
+      return '✗ Eher ungünstig';
+    }
+
+    function seededShuffle(arr, seed) {
+      const a = [...arr];
+      let s = seed | 1;
+      for (let i = a.length - 1; i > 0; i--) {
+        s = (Math.imul(1664525, s) + 1013904223) >>> 0;
+        const j = s % (i + 1);
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function applyFilters(w) {
+      const { type, duration, energy } = S.filter;
+      let list = OUTINGS.filter(o => {
+        if (type === 'outdoor'   && o.category === 'indoor')  return false;
+        if (type === 'indoor'    && o.category === 'outdoor') return false;
+        if (type === 'favorites' && !S.favorites.includes(o.id)) return false;
+        if (duration !== 'all'   && o.duration !== duration)  return false;
+        if (energy !== 'all'     && o.energy !== energy)      return false;
+        return true;
+      });
+
+      list = list.map(o => ({ ...o, score: scoreOuting(o, w) }));
+
+      const high = seededShuffle(list.filter(o => o.score >= 75), S.seed);
+      const mid  = seededShuffle(list.filter(o => o.score >= 45 && o.score < 75), S.seed + 1);
+      const low  = seededShuffle(list.filter(o => o.score < 45), S.seed + 2);
+
+      return [...high, ...mid, ...low];
+    }
+
+    /* ================================================================
+       RENDER
+    ================================================================ */
+    function render() {
+      const root = document.getElementById('appMain');
+
+      if (S.loading) {
+        root.innerHTML = `<div class="loading"><div class="spinner"></div><p>Wetter wird geladen…</p></div>`;
+        return;
+      }
+
+      if (!S.location) {
+        root.innerHTML = `
+          <div class="loc-prompt">
+            <span class="loc-prompt-icon">🗺️</span>
+            <h2>Wo seid ihr heute?</h2>
+            <p>Gebt oben euren Ort oder eure PLZ ein – oder nutzt die automatische Standortermittlung – und ihr bekommt sofort passende Ausflugstipps.</p>
+            <button class="btn btn-primary" onclick="document.getElementById('locInput').focus()">
+              📍 Ort eingeben
+            </button>
+          </div>`;
+        return;
+      }
+
+      let html = '';
+
+      if (S.error) {
+        html += `<div class="error-bar">⚠️ <span>${escHtml(S.error)}</span></div>`;
+      }
+
+      if (S.weather) {
+        html += renderWeather();
+        html += renderBanner();
+        html += renderFilters();
+        html += renderOutings();
+      }
+
+      root.innerHTML = html;
+      bindDynamic();
+    }
+
+    function renderWeather() {
+      const w = S.weather;
+      const cond = CONDITIONS[w.condition] || CONDITIONS.cloudy;
+
+      const dayLabel = S.activeDay === 0 ? 'Heute' : S.activeDay === 1 ? 'Morgen' : WEEKDAYS[S.forecast[S.activeDay]?.date.getDay()];
+
+      const forecastHtml = S.forecast.map((day, i) => {
+        const dc = CONDITIONS[day.condition] || CONDITIONS.cloudy;
+        const name = i === 0 ? 'Heute' : i === 1 ? 'Mo.' : WEEKDAYS[day.date.getDay()];
+        return `
+          <div class="fc-day ${S.activeDay === i ? 'active' : ''}" data-day="${i}">
+            <div class="fc-name">${name}</div>
+            <span class="fc-icon">${dc.icon}</span>
+            <div class="fc-temp"><b>${day.tMax}°</b> / ${day.tMin}°</div>
+            <div class="fc-rain">💧 ${day.rain}%</div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="weather-section">
+          <div class="weather-card ${cond.cls}" data-weather-icon="${cond.icon}">
+            <div class="wc-day-label">${dayLabel}</div>
+            <div class="wc-row1">
+              <div>
+                <div class="wc-temp">${w.temp}°C</div>
+                <div class="wc-feels">Gefühlt ${w.feels}°C</div>
+              </div>
+              <div class="wc-icon">${cond.icon}</div>
+            </div>
+            <div class="wc-label">${cond.label}</div>
+            <div class="wc-meta">
+              <span class="wc-meta-item">💨 Wind ${w.wind} km/h</span>
+              <span class="wc-meta-item">💧 Regen ${w.rain}%</span>
+              ${w.humidity !== null ? `<span class="wc-meta-item">🌡️ Feuchte ${w.humidity}%</span>` : ''}
+            </div>
+            <div class="wc-minmax">
+              <span>↑ ${w.tMax}°C</span>
+              <span style="opacity:.5">|</span>
+              <span>↓ ${w.tMin}°C</span>
+            </div>
+          </div>
+          <div class="forecast-strip">${forecastHtml}</div>
+        </div>`;
+    }
+
+    function renderBanner() {
+      const w = S.weather;
+      const list = applyFilters(w);
+      if (!list.length) return '';
+      const best = list[0];
+
+      const isBad  = ['rainy', 'stormy', 'snowy', 'drizzle'].includes(w.condition);
+      const isGood = ['sunny', 'partly_cloudy'].includes(w.condition);
+
+      let cls, emoji, label, text, sub;
+
+      if (best.score >= 75) {
+        cls = 'good'; emoji = '🌟'; label = 'Empfehlung des Tages';
+        text = `${best.icon} ${best.title}`;
+        sub  = isGood ? 'Perfektes Wetter für diesen Ausflug!' : 'Heute besonders empfehlenswert.';
+      } else if (isBad) {
+        cls = 'bad'; emoji = '🏠'; label = 'Drinnen-Tag';
+        text = `${best.icon} ${best.title}`;
+        sub  = 'Bei diesem Wetter der beste Tipp für euch.';
+      } else {
+        cls = 'mixed'; emoji = '👍'; label = 'Tipp für heute';
+        text = `${best.icon} ${best.title}`;
+        sub  = 'Passt gut zum heutigen Wetter.';
+      }
+
+      return `
+        <div class="rec-banner ${cls}">
+          <span class="rec-emoji">${emoji}</span>
+          <div>
+            <div class="rec-label">${label}</div>
+            <div class="rec-title">${text}</div>
+            <div class="rec-sub">${sub}</div>
+          </div>
+        </div>`;
+    }
+
+    function renderFilters() {
+      const f = S.filter;
+
+      function chips(key, options) {
+        return options.map(([val, lbl]) =>
+          `<button class="chip ${f[key] === val ? 'active' : ''}" data-fkey="${key}" data-fval="${val}">${lbl}</button>`
+        ).join('');
+      }
+
+      const typeChips = chips('type', [
+        ['all',       '🗂 Alle'],
+        ['outdoor',   '🌿 Draußen'],
+        ['indoor',    '🏠 Drinnen'],
+        ['favorites', '⭐ Favoriten']
+      ]);
+
+      const durChips = chips('duration', [
+        ['all',      'Alle Zeiten'],
+        ['kurz',     '⏱ Kurz'],
+        ['mittel',   '⏱ Mittel'],
+        ['ganztags', '⏱ Ganztags']
+      ]);
+
+      const engChips = chips('energy', [
+        ['all',       'Alle Level'],
+        ['ruhig',     '😌 Entspannt'],
+        ['aktiv',     '🏃 Aktiv'],
+        ['sehr_aktiv','⚡ Sehr aktiv']
+      ]);
+
+      const isFiltered = f.type !== 'all' || f.duration !== 'all' || f.energy !== 'all';
+
+      return `
+        <div class="filters-section">
+          <div class="filter-row">
+            <span class="filter-label">Ort</span>
+            ${typeChips}
+            <button class="btn-shuffle" id="shuffleBtn">
+              <span class="shuffle-icon">🔀</span> Neu mischen
+            </button>
+          </div>
+          <div class="filter-row">
+            <span class="filter-label">Dauer</span>
+            ${durChips}
+          </div>
+          <div class="filter-row">
+            <span class="filter-label">Energie</span>
+            ${engChips}
+            ${isFiltered ? `<button class="btn-reset" id="resetFilters">✕ Zurücksetzen</button>` : ''}
+          </div>
+        </div>`;
+    }
+
+    function renderOutings() {
+      const list = applyFilters(S.weather);
+
+      if (!list.length) {
+        return `
+          <div class="empty-state">
+            <span class="es-icon">🔍</span>
+            <p style="font-weight:600;margin-bottom:.35rem">Keine Ausflüge gefunden</p>
+            <p style="font-size:.85rem">Passt die Filter an oder setzt sie zurück.</p>
+          </div>`;
+      }
+
+      const cards = list.map((o, idx) => renderCard(o, idx)).join('');
+
+      return `
+        <div>
+          <div class="outings-header">
+            <span class="section-title">Ausflugstipps</span>
+            <span class="count-pill">${list.length} Vorschläge</span>
+          </div>
+          <div class="outings-grid">${cards}</div>
+        </div>`;
+    }
+
+    function renderCard(o, idx) {
+      const t = tier(o.score);
+      const isFav = S.favorites.includes(o.id);
+      const tip = o.tips[o.score % o.tips.length];
+      const tagsHtml = o.tags.map(tag =>
+        `<span class="tag ${tag === 'kostenlos' ? 'free' : ''}">${tag}</span>`
+      ).join('');
+      const delay = Math.min(idx * 0.04, 0.6);
+
+      return `
+        <div class="outing-card tier-${t}" style="animation-delay:${delay}s" data-id="${o.id}">
+          <div class="card-header">
+            <span class="card-icon">${o.icon}</span>
+            <div class="card-title-wrap">
+              <div class="card-title">${o.title}</div>
+              <span class="score-pill ${t}">${scoreLabel(o.score)}</span>
+            </div>
+            <button class="fav-btn ${isFav ? 'on' : ''}" data-fav="${o.id}" title="Als Favorit markieren">
+              ${isFav ? '★' : '☆'}
+            </button>
+          </div>
+          <div class="card-desc">${o.desc}</div>
+          <div class="card-tags">${tagsHtml}</div>
+          <div class="card-meta">
+            <span class="meta-item">${DURATION_MAP[o.duration]}</span>
+            <span class="meta-item">${ENERGY_MAP[o.energy]}</span>
+            ${o.category === 'outdoor' ? '<span class="meta-item">🌿 Draußen</span>' : ''}
+            ${o.category === 'indoor'  ? '<span class="meta-item">🏠 Drinnen</span>'  : ''}
+          </div>
+          <div class="card-tip">
+            <span class="tip-icon">💡</span>
+            <span>${tip}</span>
+          </div>
+        </div>`;
+    }
+
+    /* ================================================================
+       EVENT BINDING
+    ================================================================ */
+    function bindDynamic() {
+      // Filter chips
+      document.querySelectorAll('.chip').forEach(el => {
+        el.addEventListener('click', () => {
+          S.filter[el.dataset.fkey] = el.dataset.fval;
+          render();
+        });
+      });
+
+      // Forecast day
+      document.querySelectorAll('.fc-day').forEach(el => {
+        el.addEventListener('click', () => {
+          const i = +el.dataset.day;
+          S.activeDay = i;
+          S.weather = parseWeather(S.weatherRaw, i);
+          render();
+        });
+      });
+
+      // Shuffle
+      const shuffleBtn = document.getElementById('shuffleBtn');
+      if (shuffleBtn) {
+        shuffleBtn.addEventListener('click', () => {
+          S.seed = (Math.random() * 1e9) | 0;
+          shuffleBtn.classList.add('spinning');
+          setTimeout(() => shuffleBtn?.classList.remove('spinning'), 500);
+          render();
+        });
+      }
+
+      // Reset filters
+      const resetBtn = document.getElementById('resetFilters');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+          S.filter = { type: 'all', duration: 'all', energy: 'all' };
+          render();
+        });
+      }
+
+      // Favorites
+      document.querySelectorAll('.fav-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const id = btn.dataset.fav;
+          if (S.favorites.includes(id)) {
+            S.favorites = S.favorites.filter(f => f !== id);
+          } else {
+            S.favorites.push(id);
+          }
+          localStorage.setItem('fav_v1', JSON.stringify(S.favorites));
+          btn.textContent = S.favorites.includes(id) ? '★' : '☆';
+          btn.classList.toggle('on', S.favorites.includes(id));
+        });
+      });
+    }
+
+    /* ================================================================
+       LOCATION INPUT & AUTOCOMPLETE
+    ================================================================ */
+    let acTimeout = null;
+
+    function bindHeader() {
+      const input   = document.getElementById('locInput');
+      const acList  = document.getElementById('acList');
+      const searchB = document.getElementById('searchBtn');
+      const geoB    = document.getElementById('geoBtn');
+
+      input.addEventListener('input', () => {
+        clearTimeout(acTimeout);
+        const v = input.value.trim();
+        if (v.length < 2) { acList.style.display = 'none'; return; }
+        acTimeout = setTimeout(() => loadAC(v), 280);
+      });
+
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') doSearch(input.value.trim());
+      });
+
+      searchB.addEventListener('click', () => doSearch(input.value.trim()));
+
+      geoB.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+          S.error = 'Standortermittlung nicht unterstützt.';
+          render();
+          return;
+        }
+        geoB.textContent = '⏳';
+        geoB.disabled = true;
+        navigator.geolocation.getCurrentPosition(
+          async pos => {
+            geoB.textContent = '📡';
+            geoB.disabled = false;
+            const { latitude: lat, longitude: lon } = pos.coords;
+            try {
+              const name = await reverseGeocode(lat, lon);
+              setLocation({ name, lat, lon });
+            } catch {
+              setLocation({ name: 'Mein Standort', lat, lon });
+            }
+          },
+          () => {
+            geoB.textContent = '📡';
+            geoB.disabled = false;
+            S.error = 'Standort konnte nicht ermittelt werden. Bitte Ort eingeben.';
+            render();
+          },
+          { timeout: 8000 }
+        );
+      });
+
+      document.addEventListener('click', e => {
+        if (!e.target.closest('.loc-wrap')) acList.style.display = 'none';
+      });
+    }
+
+    async function loadAC(query) {
+      try {
+        const results = await geocode(query);
+        const acList  = document.getElementById('acList');
+        if (!results.length) { acList.style.display = 'none'; return; }
+        acList.innerHTML = results.map((r, i) => `
+          <div class="ac-item" data-idx="${i}">
+            📍 ${escHtml(r.name)}${r.admin1 ? ', ' + escHtml(r.admin1) : ''}${r.country ? ' · ' + escHtml(r.country) : ''}
+          </div>`).join('');
+        acList.style.display = 'block';
+        acList.querySelectorAll('.ac-item').forEach(el => {
+          el.addEventListener('click', () => {
+            const r = results[+el.dataset.idx];
+            const name = r.name + (r.admin1 ? ', ' + r.admin1 : '');
+            setLocation({ name, lat: r.latitude, lon: r.longitude });
+            acList.style.display = 'none';
+          });
+        });
+      } catch { /* ignore AC errors */ }
+    }
+
+    async function doSearch(query) {
+      if (!query) return;
+      document.getElementById('acList').style.display = 'none';
+      try {
+        const results = await geocode(query);
+        if (!results.length) {
+          S.error = `"${query}" wurde nicht gefunden. Bitte anders eingeben.`;
+          render();
+          return;
+        }
+        const r = results[0];
+        setLocation({ name: r.name + (r.admin1 ? ', ' + r.admin1 : ''), lat: r.latitude, lon: r.longitude });
+      } catch {
+        S.error = 'Suche fehlgeschlagen. Bitte Internetverbindung prüfen.';
+        render();
+      }
+    }
+
+    async function setLocation(loc) {
+      S.location  = loc;
+      S.activeDay = 0;
+      S.error     = null;
+      localStorage.setItem('lastLoc_v1', JSON.stringify(loc));
+      document.getElementById('locInput').value = loc.name;
+      await loadWeatherData();
+    }
+
+    async function loadWeatherData() {
+      if (!S.location) return;
+      S.loading = true;
+      S.error   = null;
+      render();
+      try {
+        const raw  = await fetchWeather(S.location.lat, S.location.lon);
+        S.weatherRaw = raw;
+        S.weather    = parseWeather(raw, 0);
+        S.forecast   = parseForecast(raw);
+        S.loading    = false;
+        render();
+      } catch (e) {
+        S.loading = false;
+        S.error   = e.message || 'Wetterdaten konnten nicht geladen werden.';
+        render();
+      }
+    }
+
+    /* ================================================================
+       UTILS
+    ================================================================ */
+    function escHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    /* ================================================================
+       INIT
+    ================================================================ */
+    function init() {
+      bindHeader();
+
+      const saved = localStorage.getItem('lastLoc_v1');
+      if (saved) {
+        try {
+          const loc = JSON.parse(saved);
+          S.location = loc;
+          document.getElementById('locInput').value = loc.name;
+          loadWeatherData();
+        } catch {
+          render();
+        }
+      } else {
+        render();
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
