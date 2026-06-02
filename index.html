@@ -157,9 +157,11 @@
       background: rgba(255,255,255,.18);
       color: #fff;
       border: 1.5px solid rgba(255,255,255,.25);
-      padding: .58rem .7rem;
+      padding: .58rem .75rem;
     }
     .btn-ghost:hover { background: rgba(255,255,255,.28); }
+    .geo-btn-txt { font-size: .82rem; }
+    @media (max-width: 420px) { .geo-btn-txt { display: none; } }
 
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-primary:hover { background: var(--primary-dark); box-shadow: var(--shadow-md); }
@@ -635,6 +637,122 @@
     }
     .tip-icon { flex-shrink: 0; margin-top: .05rem; }
 
+    /* ── LOCATION BAR ── */
+    .loc-bar {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-md);
+      padding: .6rem .9rem;
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      box-shadow: var(--shadow-xs);
+      margin-bottom: .75rem;
+    }
+
+    .loc-bar-icon { font-size: 1rem; flex-shrink: 0; }
+
+    .loc-bar-info { flex: 1; min-width: 0; }
+
+    .loc-bar-name {
+      font-size: .88rem;
+      font-weight: 600;
+      color: var(--c-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+    }
+
+    .loc-bar-sub {
+      font-size: .72rem;
+      color: var(--c-text-3);
+    }
+
+    .loc-source-tag {
+      font-size: .68rem;
+      font-weight: 700;
+      padding: .13rem .5rem;
+      border-radius: 100px;
+      background: var(--accent-light);
+      color: #92400E;
+      flex-shrink: 0;
+      letter-spacing: .03em;
+    }
+    .loc-source-tag.gps { background: var(--success-light); color: var(--success); }
+    @media (prefers-color-scheme: dark) {
+      .loc-source-tag     { color: var(--accent); }
+      .loc-source-tag.gps { color: var(--success); }
+    }
+
+    .loc-bar-change {
+      background: none;
+      border: none;
+      font-family: var(--font);
+      font-size: .78rem;
+      color: var(--primary);
+      cursor: pointer;
+      padding: .22rem .4rem;
+      border-radius: 4px;
+      flex-shrink: 0;
+      transition: background var(--ease);
+      white-space: nowrap;
+    }
+    .loc-bar-change:hover { background: var(--primary-light); }
+
+    /* ── GEO CTA ── */
+    .geo-cta {
+      display: flex;
+      align-items: center;
+      gap: .85rem;
+      background: var(--success-light);
+      border: 1px solid rgba(16,185,129,.22);
+      border-radius: var(--radius-md);
+      padding: .9rem 1rem;
+      margin-bottom: .75rem;
+      animation: fadeUp .3s ease;
+    }
+
+    .geo-cta-icon { font-size: 1.55rem; flex-shrink: 0; }
+
+    .geo-cta-body { flex: 1; min-width: 0; }
+
+    .geo-cta-title {
+      font-size: .88rem;
+      font-weight: 700;
+      color: var(--c-text);
+      margin-bottom: .1rem;
+    }
+
+    .geo-cta-sub {
+      font-size: .78rem;
+      color: var(--c-text-3);
+      line-height: 1.4;
+    }
+
+    .geo-cta-btn {
+      background: var(--success);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: .55rem .95rem;
+      font-family: var(--font);
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--ease);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .geo-cta-btn:hover  { background: #059669; transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+    .geo-cta-btn:active { transform: scale(.97); }
+    .geo-cta-btn:disabled { opacity: .55; cursor: default; transform: none; box-shadow: none; }
+
+    @media (max-width: 460px) {
+      .geo-cta { flex-wrap: wrap; }
+      .geo-cta-btn { width: 100%; text-align: center; }
+    }
+
     /* ── FOOTER ── */
     .app-footer {
       text-align: center;
@@ -680,7 +798,7 @@
           <div class="autocomplete" id="acList" style="display:none"></div>
         </div>
         <button type="button" class="btn btn-white" id="searchBtn">Suchen</button>
-        <button type="button" class="btn btn-ghost" id="geoBtn" title="Standort ermitteln">📡</button>
+        <button type="button" class="btn btn-ghost" id="geoBtn" title="Meinen Standort verwenden">📡 <span class="geo-btn-txt">Standort</span></button>
       </form>
     </div>
   </header>
@@ -1314,7 +1432,7 @@
 
       const forecastHtml = S.forecast.map((day, i) => {
         const dc = CONDITIONS[day.condition] || CONDITIONS.cloudy;
-        const name = i === 0 ? 'Heute' : i === 1 ? 'Mo.' : WEEKDAYS[day.date.getDay()];
+        const name = i === 0 ? 'Heute' : i === 1 ? 'Morgen' : WEEKDAYS[day.date.getDay()];
         return `
           <div class="fc-day ${S.activeDay === i ? 'active' : ''}" data-day="${i}">
             <div class="fc-name">${name}</div>
@@ -1323,6 +1441,8 @@
             <div class="fc-rain">💧 ${day.rain}%</div>
           </div>`;
       }).join('');
+
+      const source = S.location?.source || 'manual';
 
       return `
         <div class="weather-section">
@@ -1347,6 +1467,8 @@
               <span>↓ ${w.tMin}°C</span>
             </div>
           </div>
+          ${renderLocBar(source)}
+          ${source === 'default' ? renderGeoCta() : ''}
           <div class="forecast-strip">${forecastHtml}</div>
         </div>`;
     }
@@ -1500,6 +1622,45 @@
         </div>`;
     }
 
+    function renderLocBar(source) {
+      const name = S.location?.name || '';
+      const icon = source === 'gps' ? '📡' : '📍';
+      let tag = '', sub = '';
+
+      if (source === 'gps') {
+        tag = '<span class="loc-source-tag gps">GPS</span>';
+        sub = 'Aktueller Standort';
+      } else if (source === 'default') {
+        tag = '<span class="loc-source-tag">Beispielort</span>';
+        sub = 'Oben eigenen Ort eingeben';
+      } else {
+        sub = 'Manuell ausgewählt';
+      }
+
+      return `
+        <div class="loc-bar">
+          <span class="loc-bar-icon">${icon}</span>
+          <div class="loc-bar-info">
+            <span class="loc-bar-name">${escHtml(name)}</span>
+            <span class="loc-bar-sub">${sub}</span>
+          </div>
+          ${tag}
+          <button class="loc-bar-change" id="locBarChange">Ort ändern</button>
+        </div>`;
+    }
+
+    function renderGeoCta() {
+      return `
+        <div class="geo-cta">
+          <span class="geo-cta-icon">📡</span>
+          <div class="geo-cta-body">
+            <div class="geo-cta-title">Meinen Standort verwenden</div>
+            <div class="geo-cta-sub">Passgenaue Ausflugstipps für deinen echten Ort – einmalige Zustimmung genügt.</div>
+          </div>
+          <button class="geo-cta-btn" id="geoCta">Standort ermitteln</button>
+        </div>`;
+    }
+
     /* ================================================================
        EVENT BINDING
     ================================================================ */
@@ -1542,6 +1703,25 @@
         });
       }
 
+      // Geo CTA button (in main content area)
+      const geoCta = document.getElementById('geoCta');
+      if (geoCta) {
+        geoCta.addEventListener('click', () => requestGeo(geoCta));
+      }
+
+      // "Ort ändern" in location bar
+      const locBarChange = document.getElementById('locBarChange');
+      if (locBarChange) {
+        locBarChange.addEventListener('click', () => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          setTimeout(() => {
+            const inp = document.getElementById('locInput');
+            inp.focus();
+            inp.select();
+          }, 200);
+        });
+      }
+
       // Favorites
       document.querySelectorAll('.fav-btn').forEach(btn => {
         btn.addEventListener('click', e => {
@@ -1557,6 +1737,44 @@
           btn.classList.toggle('on', S.favorites.includes(id));
         });
       });
+    }
+
+    /* ================================================================
+       GEOLOCATION (shared helper – only triggered by explicit click)
+    ================================================================ */
+    function requestGeo(btn) {
+      if (!navigator.geolocation) {
+        S.error = 'Standortermittlung wird von diesem Browser nicht unterstützt. Bitte Ort manuell eingeben.';
+        render();
+        return;
+      }
+      const originalText = btn.textContent.trim();
+      btn.textContent = '⏳ Ermitteln…';
+      btn.disabled = true;
+
+      navigator.geolocation.getCurrentPosition(
+        async pos => {
+          const { latitude: lat, longitude: lon } = pos.coords;
+          try {
+            const name = await reverseGeocode(lat, lon);
+            setLocation({ name, lat, lon }, 'gps');
+          } catch {
+            setLocation({ name: 'Mein Standort', lat, lon }, 'gps');
+          }
+          // btn may be gone after re-render – no need to reset it
+        },
+        err => {
+          btn.textContent = originalText;
+          btn.disabled = false;
+          if (err.code === 1) {
+            S.error = 'Standortzugriff verweigert. Bitte Ort im Suchfeld oben eingeben.';
+          } else {
+            S.error = 'Standort konnte nicht ermittelt werden. Bitte Ort manuell eingeben.';
+          }
+          render();
+        },
+        { timeout: 10000 }
+      );
     }
 
     /* ================================================================
@@ -1583,35 +1801,8 @@
 
       searchB.addEventListener('click', () => doSearch(input.value.trim()));
 
-      geoB.addEventListener('click', () => {
-        if (!navigator.geolocation) {
-          S.error = 'Standortermittlung nicht unterstützt.';
-          render();
-          return;
-        }
-        geoB.textContent = '⏳';
-        geoB.disabled = true;
-        navigator.geolocation.getCurrentPosition(
-          async pos => {
-            geoB.textContent = '📡';
-            geoB.disabled = false;
-            const { latitude: lat, longitude: lon } = pos.coords;
-            try {
-              const name = await reverseGeocode(lat, lon);
-              setLocation({ name, lat, lon });
-            } catch {
-              setLocation({ name: 'Mein Standort', lat, lon });
-            }
-          },
-          () => {
-            geoB.textContent = '📡';
-            geoB.disabled = false;
-            S.error = 'Standort konnte nicht ermittelt werden. Bitte Ort eingeben.';
-            render();
-          },
-          { timeout: 8000 }
-        );
-      });
+      // Geo button in header: only fires on explicit click, never on load
+      geoB.addEventListener('click', () => requestGeo(geoB));
 
       document.addEventListener('click', e => {
         if (!e.target.closest('.loc-wrap')) acList.style.display = 'none';
@@ -1657,11 +1848,11 @@
       }
     }
 
-    async function setLocation(loc) {
-      S.location  = loc;
+    async function setLocation(loc, source = 'manual') {
+      S.location  = { ...loc, source };
       S.activeDay = 0;
       S.error     = null;
-      localStorage.setItem('lastLoc_v1', JSON.stringify(loc));
+      localStorage.setItem('lastLoc_v1', JSON.stringify(S.location));
       document.getElementById('locInput').value = loc.name;
       await loadWeatherData();
     }
@@ -1695,6 +1886,14 @@
     /* ================================================================
        INIT
     ================================================================ */
+    async function loadDefaultLocation() {
+      // Nürnberg as built-in example — no geolocation triggered
+      await setLocation(
+        { name: 'Nürnberg, Bayern', lat: 49.4521, lon: 11.0767 },
+        'default'
+      );
+    }
+
     function init() {
       bindHeader();
 
@@ -1702,14 +1901,16 @@
       if (saved) {
         try {
           const loc = JSON.parse(saved);
+          // Restore last explicitly chosen location (manual or GPS from a previous session)
           S.location = loc;
           document.getElementById('locInput').value = loc.name;
           loadWeatherData();
         } catch {
-          render();
+          loadDefaultLocation();
         }
       } else {
-        render();
+        // First visit: start with Nürnberg so the app is immediately usable
+        loadDefaultLocation();
       }
     }
 
