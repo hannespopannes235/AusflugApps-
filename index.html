@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FamilienAusflug – Ausflugstipps fürs Wetter</title>
   <meta name="description" content="Wetterbasierte Ausflugstipps für Familien mit Kleinkind (2–3 Jahre)">
-  <meta name="theme-color" content="#3B82F6">
+  <meta name="theme-color" content="#1E40AF">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -20,7 +20,7 @@
       --c-bg:           #F6F5F3;
       --c-surface:      #FFFFFF;
       --c-border:       #E6E3DF;
-      --c-border-muted: #F0EEEb;
+      --c-border-muted: #F0EEEB;
       --c-text:         #18181B;
       --c-text-2:       #52525B;
       --c-text-3:       #A1A1AA;
@@ -927,6 +927,31 @@
     .app-footer a { color: var(--primary); text-decoration: none; }
     .app-footer a:hover { text-decoration: underline; }
 
+    /* ── ACCESSIBILITY ── */
+    .sr-only {
+      position: absolute;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* ── WEATHER HINT ── */
+    .rec-hint {
+      font-size: .82rem;
+      color: var(--c-text-2);
+      font-weight: 500;
+      line-height: 1.45;
+      padding-bottom: .6rem;
+      margin-bottom: .55rem;
+      border-bottom: 1px solid var(--c-border);
+    }
+
+    /* ── TEMP UNIT ── */
+    .wc-temp-unit { font-size: 2rem; font-weight: 600; opacity: .7; }
+
     /* ── ANIMATIONS ── */
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(10px); }
@@ -942,14 +967,15 @@
   <header class="app-header">
     <div class="header-inner">
       <div class="header-top">
-        <div class="app-logo">
+        <h1 class="app-logo">
           🧭 FamilienAusflug
           <span>Ausflugstipps fürs Wetter · 2–3 Jahre</span>
-        </div>
+        </h1>
       </div>
-      <form class="location-form" id="locForm" onsubmit="return false;">
+      <form class="location-form" id="locForm" onsubmit="return false;" role="search" aria-label="Ort suchen">
         <div class="loc-wrap">
-          <span class="loc-prefix">📍</span>
+          <label for="locInput" class="sr-only">Ort oder Postleitzahl eingeben</label>
+          <span class="loc-prefix" aria-hidden="true">📍</span>
           <input
             type="text"
             class="loc-input"
@@ -957,17 +983,19 @@
             placeholder="Ort oder PLZ eingeben…"
             autocomplete="off"
             spellcheck="false"
+            aria-autocomplete="list"
+            aria-controls="acList"
           >
-          <div class="autocomplete" id="acList" style="display:none"></div>
+          <div class="autocomplete" id="acList" role="listbox" aria-label="Ortsvorschläge" style="display:none"></div>
         </div>
-        <button type="button" class="btn btn-white" id="searchBtn">Suchen</button>
-        <button type="button" class="btn btn-ghost" id="geoBtn" title="Meinen Standort verwenden">📡 <span class="geo-btn-txt">Standort</span></button>
+        <button type="button" class="btn btn-white" id="searchBtn" aria-label="Ort suchen">Suchen</button>
+        <button type="button" class="btn btn-ghost" id="geoBtn" aria-label="Meinen Standort automatisch ermitteln">📡 <span class="geo-btn-txt" aria-hidden="true">Standort</span></button>
       </form>
     </div>
   </header>
 
   <!-- MAIN -->
-  <main class="main" id="appMain"></main>
+  <main class="main" id="appMain" aria-label="Ausflugstipps" aria-live="polite" aria-atomic="false"></main>
 
   <!-- FOOTER -->
   <footer class="app-footer">
@@ -1196,7 +1224,7 @@
         title: 'Enten füttern am See',
         desc: 'Enten, Schwäne und Frösche beobachten, Steine ins Wasser werfen und am Ufer spielen – Kleinkinder am Wasser sind in ihrem Element. Einfach, kostenlos und immer ein kleines Abenteuer.',
         category: 'outdoor',
-        tags: ['kostenlos', 'natur', 'tiere', 'entspannt'],
+        tags: ['kostenlos', 'natur', 'tiere', 'entspannt', 'wasser'],
         duration: 'kurz',
         energy: 'ruhig',
         ideal:  ['sunny', 'partly_cloudy', 'cloudy'],
@@ -1482,23 +1510,58 @@
       let s = 50;
       const { condition, temp, wind, rain } = w;
 
+      // ── Wetterbedingung passend? ──
       if      (o.ideal.includes(condition)) s += 35;
       else if (o.ok.includes(condition))    s += 10;
       else if (o.avoid.includes(condition)) s -= 45;
 
-      if (o.minTemp !== null && temp < o.minTemp)
-        s -= Math.min(28, (o.minTemp - temp) * 2.5);
-      if (o.maxTemp !== null && temp > o.maxTemp)
-        s -= Math.min(15, (temp - o.maxTemp) * 2);
-      if (o.maxWind !== null && wind > o.maxWind)
-        s -= Math.min(20, (wind - o.maxWind) * 1.2);
-      if (o.category === 'outdoor' && o.maxRain !== null && rain > o.maxRain)
-        s -= Math.min(25, (rain - o.maxRain) * 0.45);
+      // ── Schönes Wetter → Outdoor bevorzugen ──
+      if (['sunny', 'partly_cloudy'].includes(condition)) {
+        if (o.category === 'outdoor') s += 12;
+        if (o.category === 'indoor')  s -= 8;
+      }
 
-      if (o.category === 'indoor' && ['rainy','stormy','snowy','drizzle'].includes(condition))
-        s += 15;
-      if (o.category === 'outdoor' && condition === 'sunny')
-        s += 5;
+      // ── Schlechtes Wetter → Indoor bevorzugen ──
+      if (['rainy', 'stormy', 'snowy', 'drizzle'].includes(condition)) {
+        if (o.category === 'indoor')  s += 18;
+        if (o.category === 'outdoor') s -= 10;
+      }
+
+      // ── Temperatur ──
+      const isHot  = temp >= 27;
+      const isCold = temp <= 6;
+
+      if (o.minTemp !== null && temp < o.minTemp)
+        s -= Math.min(30, (o.minTemp - temp) * 2.5);
+      if (o.maxTemp !== null && temp > o.maxTemp)
+        s -= Math.min(20, (temp - o.maxTemp) * 2);
+
+      // Hitze: wassernahe und schattige Aktivitäten bevorzugen, Kühles Indoor gut
+      if (isHot) {
+        if (o.tags.includes('wasser'))                          s += 22;
+        if (o.category === 'indoor')                            s += 10;
+        if (o.energy === 'sehr_aktiv' && o.category === 'outdoor') s -= 12;
+      }
+
+      // Kälte: Indoor und kurze Ausflüge bevorzugen; Bewegung hält warm
+      if (isCold) {
+        if (o.category === 'indoor')   s += 12;
+        if (o.duration === 'kurz')     s += 8;
+        if (o.energy === 'sehr_aktiv') s += 6;
+      }
+
+      // ── Wind (Kleinkinder sind windempfindlich) ──
+      if (o.maxWind !== null && wind > o.maxWind)
+        s -= Math.min(22, (wind - o.maxWind) * 1.2);
+      if (o.category === 'outdoor' && wind > 25) s -= 8;
+      if (o.category === 'outdoor' && wind > 40) s -= 10;
+
+      // ── Regenwahrscheinlichkeit ──
+      if (o.category === 'outdoor' && o.maxRain !== null && rain > o.maxRain)
+        s -= Math.min(25, (rain - o.maxRain) * 0.5);
+
+      // ── Kleinkind-Bonus: kurze Aktivitäten immer etwas bevorzugt ──
+      if (o.duration === 'kurz') s += 5;
 
       return Math.max(0, Math.min(100, Math.round(s)));
     }
@@ -1510,9 +1573,47 @@
     }
 
     function scoreLabel(score) {
-      if (score >= 75) return '✓ Perfekt geeignet';
-      if (score >= 45) return '~ Gut geeignet';
-      return '✗ Eher ungünstig';
+      if (score >= 75) return 'Perfekt geeignet';
+      if (score >= 45) return 'Gut geeignet';
+      return 'Weniger geeignet';
+    }
+
+    function getWeatherHint(w) {
+      const { condition, temp, wind, rain } = w;
+      const isHot   = temp >= 27;
+      const isCold  = temp <= 6;
+      const isWarm  = temp >= 15 && temp < 27;
+      const isWet   = ['rainy', 'stormy', 'drizzle'].includes(condition);
+      const isNice  = ['sunny', 'partly_cloudy'].includes(condition);
+      const isWindy = wind > 30;
+
+      if (condition === 'stormy')
+        return 'Gewitter – heute am besten drinnen bleiben und es gemütlich machen.';
+      if (condition === 'snowy')
+        return 'Schnee! Kurze Outdoor-Aktion mit Matschkleidung oder gemütlich drinnen spielen.';
+      if (isWet && isWindy)
+        return 'Regen und Wind – ein idealer Tag für ein warmes Drinnen-Erlebnis.';
+      if (isWet)
+        return 'Bei Regen eignen sich Indoor-Ausflüge besonders – Regenkleidung und trotzdem raus ist auch eine Option.';
+      if (isHot && isNice)
+        return 'Sehr warm: Kühle Vormittagsstunden nutzen, schattige Plätze wählen und viel zu trinken einpacken.';
+      if (isHot)
+        return 'Heiß heute – wassernahe oder schattige Aktivitäten sind die beste Wahl.';
+      if (isCold && isNice)
+        return 'Kalt, aber sonnig – kurze Outdoor-Ausflüge mit warmer Kleidung sind gut möglich.';
+      if (isCold)
+        return 'Kalt – kurze Ausflüge oder Indoor-Aktivitäten sind heute am sinnvollsten.';
+      if (isWindy && isNice)
+        return 'Schönes Wetter, aber windig – geschützte Orte wie Parks mit Bäumen bevorzugen.';
+      if (isNice && isWarm)
+        return 'Schönes Wetter – ein toller Tag für Outdoor-Abenteuer mit dem Kleinkind!';
+      if (isNice)
+        return 'Freundliches Wetter – kurze Outdoor-Ausflüge am Vormittag besonders empfehlenswert.';
+      if (condition === 'cloudy')
+        return 'Bedeckt, aber trocken – gut für kurze Ausflüge, solange kein Regen kommt.';
+      if (condition === 'foggy')
+        return 'Neblig und feucht – Indoor-Aktivitäten oder ein kurzer Spaziergang im Wald sind eine gute Wahl.';
+      return 'Schaut kurz auf die Vorhersage und entscheidet dann spontan!';
     }
 
     function seededShuffle(arr, seed) {
@@ -1635,9 +1736,12 @@
         const dc = CONDITIONS[day.condition] || CONDITIONS.cloudy;
         const name = i === 0 ? 'Heute' : i === 1 ? 'Morgen' : WEEKDAYS[day.date.getDay()];
         return `
-          <div class="fc-day ${S.activeDay === i ? 'active' : ''}" data-day="${i}">
+          <div class="fc-day ${S.activeDay === i ? 'active' : ''}" data-day="${i}"
+            role="button" tabindex="0"
+            aria-pressed="${S.activeDay === i}"
+            aria-label="${name}: ${dc.label}, ${day.tMax}°/${day.tMin}°, Regenwahrscheinlichkeit ${day.rain}%">
             <div class="fc-name">${name}</div>
-            <span class="fc-icon">${dc.icon}</span>
+            <span class="fc-icon" aria-hidden="true">${dc.icon}</span>
             <div class="fc-temp"><b>${day.tMax}°</b> / ${day.tMin}°</div>
             <div class="fc-rain">💧 ${day.rain}%</div>
           </div>`;
@@ -1676,6 +1780,7 @@
         <div class="rec-banner ${cls}">
           <div class="rec-icon-wrap">${icon}</div>
           <div class="rec-body">
+            <div class="rec-hint">${getWeatherHint(w)}</div>
             <div class="rec-label">${label}</div>
             <div class="rec-title">${best.title}</div>
             <div class="rec-sub">${sub}</div>
@@ -1688,7 +1793,7 @@
 
       function chips(key, options) {
         return options.map(([val, lbl]) =>
-          `<button class="chip ${f[key] === val ? 'active' : ''}" data-fkey="${key}" data-fval="${val}">${lbl}</button>`
+          `<button class="chip ${f[key] === val ? 'active' : ''}" data-fkey="${key}" data-fval="${val}" aria-pressed="${f[key] === val}">${lbl}</button>`
         ).join('');
       }
 
@@ -1778,9 +1883,9 @@
               <div class="card-title">${o.title}</div>
               <span class="score-pill ${t}">${scoreLabel(o.score)}</span>
             </div>
-            <button class="fav-btn ${isFav ? 'on' : ''}" data-fav="${o.id}" title="Als Favorit markieren">
-              ${isFav ? '★' : '☆'}
-            </button>
+            <button class="fav-btn ${isFav ? 'on' : ''}" data-fav="${o.id}"
+              aria-label="${isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}: ${o.title}"
+              aria-pressed="${isFav}">${isFav ? '★' : '☆'}</button>
           </div>
           <div class="card-desc">${o.desc}</div>
           <div class="card-tags">${tagsHtml}</div>
@@ -1854,12 +1959,14 @@
 
       // Forecast day
       document.querySelectorAll('.fc-day').forEach(el => {
-        el.addEventListener('click', () => {
+        const activate = () => {
           const i = +el.dataset.day;
           S.activeDay = i;
           S.weather = parseWeather(S.weatherRaw, i);
           render();
-        });
+        };
+        el.addEventListener('click', activate);
+        el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); } });
       });
 
       // Shuffle
