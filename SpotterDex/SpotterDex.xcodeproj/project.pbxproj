@@ -11,6 +11,15 @@
 		A1B2C3D4E5F60002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60012 /* ContentView.swift */; };
 		A1B2C3D4E5F60003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60013 /* Assets.xcassets */; };
 		A1B2C3D4E5F60004 /* SpotterDexTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60014 /* SpotterDexTests.swift */; };
+		A1B2C3D4E5F70002 /* Aircraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F70001 /* Aircraft.swift */; };
+		A1B2C3D4E5F70004 /* DatabaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F70003 /* DatabaseView.swift */; };
+		A1B2C3D4E5F70006 /* DatabaseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F70005 /* DatabaseViewModel.swift */; };
+		A1B2C3D4E5F70008 /* CompareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F70007 /* CompareView.swift */; };
+		A1B2C3D4E5F70010 /* CompareViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F70009 /* CompareViewModel.swift */; };
+		A1B2C3D4E5F70012 /* LearnView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F70011 /* LearnView.swift */; };
+		A1B2C3D4E5F70014 /* LearnViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F70013 /* LearnViewModel.swift */; };
+		A1B2C3D4E5F70016 /* SpotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F70015 /* SpotView.swift */; };
+		A1B2C3D4E5F70018 /* SpotViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F70017 /* SpotViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -31,6 +40,15 @@
 		A1B2C3D4E5F60014 /* SpotterDexTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotterDexTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60015 /* SpotterDexTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpotterDexTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1B2C3D4E5F60016 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		A1B2C3D4E5F70001 /* Aircraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aircraft.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F70003 /* DatabaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F70005 /* DatabaseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseViewModel.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F70007 /* CompareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompareView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F70009 /* CompareViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompareViewModel.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F70011 /* LearnView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearnView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F70013 /* LearnViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearnViewModel.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F70015 /* SpotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F70017 /* SpotViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -96,6 +114,10 @@
 		A1B2C3D4E5F60034 /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D4E5F70019 /* Database */,
+				A1B2C3D4E5F70020 /* Compare */,
+				A1B2C3D4E5F70021 /* Learn */,
+				A1B2C3D4E5F70022 /* Spot */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -117,6 +139,7 @@
 		A1B2C3D4E5F60037 /* Data */ = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D4E5F70001 /* Aircraft.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -126,6 +149,42 @@
 			children = (
 			);
 			path = ML;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F70019 /* Database */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F70003 /* DatabaseView.swift */,
+				A1B2C3D4E5F70005 /* DatabaseViewModel.swift */,
+			);
+			path = Database;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F70020 /* Compare */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F70007 /* CompareView.swift */,
+				A1B2C3D4E5F70009 /* CompareViewModel.swift */,
+			);
+			path = Compare;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F70021 /* Learn */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F70011 /* LearnView.swift */,
+				A1B2C3D4E5F70013 /* LearnViewModel.swift */,
+			);
+			path = Learn;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F70022 /* Spot */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F70015 /* SpotView.swift */,
+				A1B2C3D4E5F70017 /* SpotViewModel.swift */,
+			);
+			path = Spot;
 			sourceTree = "<group>";
 		};
 		A1B2C3D4E5F60039 /* Preview Content */ = {
@@ -238,6 +297,15 @@
 			files = (
 				A1B2C3D4E5F60001 /* SpotterDexApp.swift in Sources */,
 				A1B2C3D4E5F60002 /* ContentView.swift in Sources */,
+				A1B2C3D4E5F70002 /* Aircraft.swift in Sources */,
+				A1B2C3D4E5F70004 /* DatabaseView.swift in Sources */,
+				A1B2C3D4E5F70006 /* DatabaseViewModel.swift in Sources */,
+				A1B2C3D4E5F70008 /* CompareView.swift in Sources */,
+				A1B2C3D4E5F70010 /* CompareViewModel.swift in Sources */,
+				A1B2C3D4E5F70012 /* LearnView.swift in Sources */,
+				A1B2C3D4E5F70014 /* LearnViewModel.swift in Sources */,
+				A1B2C3D4E5F70016 /* SpotView.swift in Sources */,
+				A1B2C3D4E5F70018 /* SpotViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -2,24 +2,31 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "airplane")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-                .font(.system(size: 60))
-            Text("SpotterDex")
-                .font(.largeTitle)
-                .bold()
-            Text("Dein Flugzeug-Nachschlagewerk")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        TabView {
+            NavigationStack {
+                DatabaseView()
+            }
+            .tabItem { Label("Datenbank", systemImage: "airplane") }
+
+            NavigationStack {
+                CompareView()
+            }
+            .tabItem { Label("Vergleich", systemImage: "arrow.left.arrow.right") }
+
+            NavigationStack {
+                LearnView()
+            }
+            .tabItem { Label("Lernen", systemImage: "book.closed") }
+
+            NavigationStack {
+                SpotView()
+            }
+            .tabItem { Label("Spotten", systemImage: "camera.viewfinder") }
         }
-        .padding()
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("SpotterDex – Dein Flugzeug-Nachschlagewerk")
     }
 }
 
 #Preview {
     ContentView()
+        .modelContainer(for: Aircraft.self, inMemory: true)
 }

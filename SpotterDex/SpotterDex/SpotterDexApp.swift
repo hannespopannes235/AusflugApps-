@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct SpotterDexApp: App {
@@ -6,5 +7,6 @@ struct SpotterDexApp: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(for: Aircraft.self)
     }
 }
