@@ -35,6 +35,8 @@
 		A1B2C3D4E5FA0006 /* SpecsQuizView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FA0005 /* SpecsQuizView.swift */; };
 		A1B2C3D4E5FA0008 /* SpotDiffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FA0007 /* SpotDiffView.swift */; };
 		A1B2C3D4E5FA0010 /* ChoiceButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FA0009 /* ChoiceButton.swift */; };
+		A1B2C3D4E5FB0002 /* ClassificationResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FB0001 /* ClassificationResult.swift */; };
+		A1B2C3D4E5FB0004 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FB0003 /* CameraView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -79,6 +81,8 @@
 		A1B2C3D4E5FA0005 /* SpecsQuizView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecsQuizView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5FA0007 /* SpotDiffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotDiffView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5FA0009 /* ChoiceButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChoiceButton.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5FB0001 /* ClassificationResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassificationResult.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5FB0003 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -228,6 +232,8 @@
 			children = (
 				A1B2C3D4E5F70015 /* SpotView.swift */,
 				A1B2C3D4E5F70017 /* SpotViewModel.swift */,
+				A1B2C3D4E5FB0001 /* ClassificationResult.swift */,
+				A1B2C3D4E5FB0003 /* CameraView.swift */,
 			);
 			path = Spot;
 			sourceTree = "<group>";
@@ -366,6 +372,8 @@
 				A1B2C3D4E5FA0006 /* SpecsQuizView.swift in Sources */,
 				A1B2C3D4E5FA0008 /* SpotDiffView.swift in Sources */,
 				A1B2C3D4E5FA0010 /* ChoiceButton.swift in Sources */,
+				A1B2C3D4E5FB0002 /* ClassificationResult.swift in Sources */,
+				A1B2C3D4E5FB0004 /* CameraView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -516,6 +524,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "SpotterDex benötigt die Kamera, um Flugzeuge zu erkennen.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -543,6 +552,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"SpotterDex/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "SpotterDex benötigt die Kamera, um Flugzeuge zu erkennen.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
