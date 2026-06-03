@@ -30,6 +30,11 @@
 		A1B2C3D4E5F90004 /* LookupDetailLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F90003 /* LookupDetailLink.swift */; };
 		A1B2C3D4E5F90006 /* AircraftSilhouetteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F90005 /* AircraftSilhouetteView.swift */; };
 		A1B2C3D4E5F90008 /* SpecRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F90007 /* SpecRow.swift */; };
+		A1B2C3D4E5FA0002 /* LearningRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FA0001 /* LearningRecord.swift */; };
+		A1B2C3D4E5FA0004 /* SilhouetteQuizView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FA0003 /* SilhouetteQuizView.swift */; };
+		A1B2C3D4E5FA0006 /* SpecsQuizView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FA0005 /* SpecsQuizView.swift */; };
+		A1B2C3D4E5FA0008 /* SpotDiffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FA0007 /* SpotDiffView.swift */; };
+		A1B2C3D4E5FA0010 /* ChoiceButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FA0009 /* ChoiceButton.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,6 +74,11 @@
 		A1B2C3D4E5F90003 /* LookupDetailLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupDetailLink.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F90005 /* AircraftSilhouetteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AircraftSilhouetteView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F90007 /* SpecRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecRow.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5FA0001 /* LearningRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningRecord.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5FA0003 /* SilhouetteQuizView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilhouetteQuizView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5FA0005 /* SpecsQuizView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecsQuizView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5FA0007 /* SpotDiffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotDiffView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5FA0009 /* ChoiceButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChoiceButton.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -148,6 +158,7 @@
 				A1B2C3D4E5F80003 /* StatusBadge.swift */,
 				A1B2C3D4E5F90005 /* AircraftSilhouetteView.swift */,
 				A1B2C3D4E5F90007 /* SpecRow.swift */,
+				A1B2C3D4E5FA0009 /* ChoiceButton.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -165,6 +176,7 @@
 			children = (
 				A1B2C3D4E5F70001 /* Aircraft.swift */,
 				A1B2C3D4E5F80001 /* SeedService.swift */,
+				A1B2C3D4E5FA0001 /* LearningRecord.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -204,6 +216,9 @@
 			children = (
 				A1B2C3D4E5F70011 /* LearnView.swift */,
 				A1B2C3D4E5F70013 /* LearnViewModel.swift */,
+				A1B2C3D4E5FA0003 /* SilhouetteQuizView.swift */,
+				A1B2C3D4E5FA0005 /* SpecsQuizView.swift */,
+				A1B2C3D4E5FA0007 /* SpotDiffView.swift */,
 			);
 			path = Learn;
 			sourceTree = "<group>";
@@ -346,6 +361,11 @@
 				A1B2C3D4E5F90004 /* LookupDetailLink.swift in Sources */,
 				A1B2C3D4E5F90006 /* AircraftSilhouetteView.swift in Sources */,
 				A1B2C3D4E5F90008 /* SpecRow.swift in Sources */,
+				A1B2C3D4E5FA0002 /* LearningRecord.swift in Sources */,
+				A1B2C3D4E5FA0004 /* SilhouetteQuizView.swift in Sources */,
+				A1B2C3D4E5FA0006 /* SpecsQuizView.swift in Sources */,
+				A1B2C3D4E5FA0008 /* SpotDiffView.swift in Sources */,
+				A1B2C3D4E5FA0010 /* ChoiceButton.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

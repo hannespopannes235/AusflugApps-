@@ -7,7 +7,9 @@ struct SpotterDexApp: App {
 
     init() {
         do {
-            container = try ModelContainer(for: Aircraft.self)
+            // Für iCloud-Sync: ModelConfiguration(cloudKitDatabase: .automatic) +
+            // iCloud-Capability im Xcode-Target aktivieren.
+            container = try ModelContainer(for: Aircraft.self, LearningRecord.self)
             // Seed beim ersten Start – synchron auf mainContext, vor UI-Aufbau.
             try SeedService.seedIfNeeded(modelContext: container.mainContext)
         } catch {
