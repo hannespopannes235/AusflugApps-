@@ -20,6 +20,12 @@
 		A1B2C3D4E5F70014 /* LearnViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F70013 /* LearnViewModel.swift */; };
 		A1B2C3D4E5F70016 /* SpotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F70015 /* SpotView.swift */; };
 		A1B2C3D4E5F70018 /* SpotViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F70017 /* SpotViewModel.swift */; };
+		A1B2C3D4E5F80002 /* SeedService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F80001 /* SeedService.swift */; };
+		A1B2C3D4E5F80004 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F80003 /* StatusBadge.swift */; };
+		A1B2C3D4E5F80006 /* AircraftEra.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F80005 /* AircraftEra.swift */; };
+		A1B2C3D4E5F80008 /* AircraftRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F80007 /* AircraftRowView.swift */; };
+		A1B2C3D4E5F80010 /* FilterMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F80009 /* FilterMenuView.swift */; };
+		A1B2C3D4E5F80012 /* aircraft_seed_v1.json in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F80011 /* aircraft_seed_v1.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,6 +55,12 @@
 		A1B2C3D4E5F70013 /* LearnViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearnViewModel.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F70015 /* SpotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F70017 /* SpotViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotViewModel.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F80001 /* SeedService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeedService.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F80003 /* StatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBadge.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F80005 /* AircraftEra.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AircraftEra.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F80007 /* AircraftRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AircraftRowView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F80009 /* FilterMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterMenuView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F80011 /* aircraft_seed_v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = aircraft_seed_v1.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -125,6 +137,7 @@
 		A1B2C3D4E5F60035 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D4E5F80003 /* StatusBadge.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -132,6 +145,7 @@
 		A1B2C3D4E5F60036 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D4E5F80011 /* aircraft_seed_v1.json */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -140,6 +154,7 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D4E5F70001 /* Aircraft.swift */,
+				A1B2C3D4E5F80001 /* SeedService.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -156,6 +171,9 @@
 			children = (
 				A1B2C3D4E5F70003 /* DatabaseView.swift */,
 				A1B2C3D4E5F70005 /* DatabaseViewModel.swift */,
+				A1B2C3D4E5F80005 /* AircraftEra.swift */,
+				A1B2C3D4E5F80007 /* AircraftRowView.swift */,
+				A1B2C3D4E5F80009 /* FilterMenuView.swift */,
 			);
 			path = Database;
 			sourceTree = "<group>";
@@ -278,6 +296,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1B2C3D4E5F60003 /* Assets.xcassets in Resources */,
+				A1B2C3D4E5F80012 /* aircraft_seed_v1.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -306,6 +325,11 @@
 				A1B2C3D4E5F70014 /* LearnViewModel.swift in Sources */,
 				A1B2C3D4E5F70016 /* SpotView.swift in Sources */,
 				A1B2C3D4E5F70018 /* SpotViewModel.swift in Sources */,
+				A1B2C3D4E5F80002 /* SeedService.swift in Sources */,
+				A1B2C3D4E5F80004 /* StatusBadge.swift in Sources */,
+				A1B2C3D4E5F80006 /* AircraftEra.swift in Sources */,
+				A1B2C3D4E5F80008 /* AircraftRowView.swift in Sources */,
+				A1B2C3D4E5F80010 /* FilterMenuView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
