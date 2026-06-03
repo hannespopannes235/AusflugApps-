@@ -101,8 +101,8 @@ struct CompareView: View {
         VStack(alignment: .leading, spacing: 0) {
             SectionHeader(title: "Größenvergleich", systemImage: "skew")
             let aircraft = viewModel.selectedAircraft
-            let maxWingspan = aircraft.map(\.wingspan).max() ?? 1
-            let maxLength   = aircraft.map(\.length).max()   ?? 1
+            let maxWingspan = max(1, aircraft.map(\.wingspan).max() ?? 1)
+            let maxLength   = max(1, aircraft.map(\.length).max()   ?? 1)
             let containerW: CGFloat = 90
             let containerH: CGFloat = 90
 
@@ -236,11 +236,11 @@ struct AircraftPickerSheet: View {
 
     private var filtered: [Aircraft] {
         guard !searchText.isEmpty else { return allAircraft }
-        let q = searchText.lowercased()
+        let q = searchText
         return allAircraft.filter {
-            $0.variant.lowercased().contains(q)      ||
-            $0.manufacturer.lowercased().contains(q) ||
-            $0.icaoCode.lowercased().contains(q)
+            $0.variant.localizedCaseInsensitiveContains(q)      ||
+            $0.manufacturer.localizedCaseInsensitiveContains(q) ||
+            $0.icaoCode.localizedCaseInsensitiveContains(q)
         }
     }
 
