@@ -37,6 +37,11 @@
 		A1B2C3D4E5FA0010 /* ChoiceButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FA0009 /* ChoiceButton.swift */; };
 		A1B2C3D4E5FB0002 /* ClassificationResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FB0001 /* ClassificationResult.swift */; };
 		A1B2C3D4E5FB0004 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FB0003 /* CameraView.swift */; };
+		A1B2C3D4E5FC0002 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FC0001 /* OnboardingView.swift */; };
+		A1B2C3D4E5FC0004 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FC0003 /* SettingsView.swift */; };
+		A1B2C3D4E5FC0006 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FC0005 /* SettingsViewModel.swift */; };
+		A1B2C3D4E5FC0008 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FC0007 /* DesignSystem.swift */; };
+		A1B2C3D4E5FC000A /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FC0009 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -83,6 +88,11 @@
 		A1B2C3D4E5FA0009 /* ChoiceButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChoiceButton.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5FB0001 /* ClassificationResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassificationResult.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5FB0003 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5FC0001 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5FC0003 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5FC0005 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5FC0007 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5FC0009 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -152,6 +162,8 @@
 				A1B2C3D4E5F70020 /* Compare */,
 				A1B2C3D4E5F70021 /* Learn */,
 				A1B2C3D4E5F70022 /* Spot */,
+				A1B2C3D4E5FC000B /* Onboarding */,
+				A1B2C3D4E5FC000C /* Settings */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -163,6 +175,7 @@
 				A1B2C3D4E5F90005 /* AircraftSilhouetteView.swift */,
 				A1B2C3D4E5F90007 /* SpecRow.swift */,
 				A1B2C3D4E5FA0009 /* ChoiceButton.swift */,
+				A1B2C3D4E5FC0007 /* DesignSystem.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -171,6 +184,7 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D4E5F80011 /* aircraft_seed_v1.json */,
+				A1B2C3D4E5FC0009 /* PrivacyInfo.xcprivacy */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -236,6 +250,23 @@
 				A1B2C3D4E5FB0003 /* CameraView.swift */,
 			);
 			path = Spot;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5FC000B /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5FC0001 /* OnboardingView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5FC000C /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5FC0003 /* SettingsView.swift */,
+				A1B2C3D4E5FC0005 /* SettingsViewModel.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		A1B2C3D4E5F60039 /* Preview Content */ = {
@@ -330,6 +361,7 @@
 			files = (
 				A1B2C3D4E5F60003 /* Assets.xcassets in Resources */,
 				A1B2C3D4E5F80012 /* aircraft_seed_v1.json in Resources */,
+				A1B2C3D4E5FC000A /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -374,6 +406,10 @@
 				A1B2C3D4E5FA0010 /* ChoiceButton.swift in Sources */,
 				A1B2C3D4E5FB0002 /* ClassificationResult.swift in Sources */,
 				A1B2C3D4E5FB0004 /* CameraView.swift in Sources */,
+				A1B2C3D4E5FC0002 /* OnboardingView.swift in Sources */,
+				A1B2C3D4E5FC0004 /* SettingsView.swift in Sources */,
+				A1B2C3D4E5FC0006 /* SettingsViewModel.swift in Sources */,
+				A1B2C3D4E5FC0008 /* DesignSystem.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

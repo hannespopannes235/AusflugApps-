@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct ContentView: View {
+    @AppStorage("com.spotterdex.onboardingDone") private var onboardingDone = false
+
     var body: some View {
         TabView {
             NavigationStack {
@@ -22,11 +24,21 @@ struct ContentView: View {
                 SpotView()
             }
             .tabItem { Label("Spotten", systemImage: "camera.viewfinder") }
+
+            NavigationStack {
+                SettingsView()
+            }
+            .tabItem { Label("Einstellungen", systemImage: "gearshape") }
+        }
+        .fullScreenCover(isPresented: .constant(!onboardingDone)) {
+            OnboardingView {
+                onboardingDone = true
+            }
         }
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Aircraft.self, inMemory: true)
+        .modelContainer(for: [Aircraft.self, LearningRecord.self], inMemory: true)
 }

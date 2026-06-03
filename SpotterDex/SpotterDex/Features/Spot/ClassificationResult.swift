@@ -17,8 +17,7 @@ struct ClassificationResult: Identifiable {
         confidence >= 0.70 ? .high : confidence >= 0.40 ? .medium : .low
     }
 
-    enum ConfidenceLevel {
+    enum ConfidenceLevel: Equatable {
         case high, medium, low
-        var color: String { self == .high ? "green" : self == .medium ? "orange" : "red" }
     }
 }
