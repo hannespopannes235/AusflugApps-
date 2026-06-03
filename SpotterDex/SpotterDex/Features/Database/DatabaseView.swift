@@ -48,7 +48,12 @@ struct DatabaseView: View {
         ScrollView {
             LazyVStack(spacing: 0) {
                 ForEach(filtered) { aircraft in
-                    AircraftRowView(aircraft: aircraft)
+                    NavigationLink {
+                        AircraftDetailView(aircraft: aircraft)
+                    } label: {
+                        AircraftRowView(aircraft: aircraft)
+                    }
+                    .buttonStyle(.plain)
                     Divider().padding(.leading, 64)
                 }
             }

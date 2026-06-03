@@ -58,6 +58,9 @@ final class Aircraft {
     var imageURL: String?        // Asset-Name oder Remote-URL
     var imageLicense: String?    // Pflichtangabe: Lizenz/Urheber
 
+    // MARK: – Nutzerdaten
+    var isFavorite: Bool = false
+
     init(
         manufacturer: String,
         family: String,
@@ -78,7 +81,8 @@ final class Aircraft {
         visualFeatures: [String] = [],
         lookalikes: [String] = [],
         imageURL: String? = nil,
-        imageLicense: String? = nil
+        imageLicense: String? = nil,
+        isFavorite: Bool = false
     ) {
         self.manufacturer = manufacturer
         self.family = family
@@ -100,5 +104,6 @@ final class Aircraft {
         self.lookalikes = lookalikes
         self.imageURL = imageURL
         self.imageLicense = imageLicense
+        self.isFavorite = isFavorite
     }
 }

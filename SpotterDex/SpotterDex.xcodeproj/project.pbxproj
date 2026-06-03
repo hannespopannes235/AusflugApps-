@@ -26,6 +26,10 @@
 		A1B2C3D4E5F80008 /* AircraftRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F80007 /* AircraftRowView.swift */; };
 		A1B2C3D4E5F80010 /* FilterMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F80009 /* FilterMenuView.swift */; };
 		A1B2C3D4E5F80012 /* aircraft_seed_v1.json in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F80011 /* aircraft_seed_v1.json */; };
+		A1B2C3D4E5F90002 /* AircraftDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F90001 /* AircraftDetailView.swift */; };
+		A1B2C3D4E5F90004 /* LookupDetailLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F90003 /* LookupDetailLink.swift */; };
+		A1B2C3D4E5F90006 /* AircraftSilhouetteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F90005 /* AircraftSilhouetteView.swift */; };
+		A1B2C3D4E5F90008 /* SpecRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F90007 /* SpecRow.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,6 +65,10 @@
 		A1B2C3D4E5F80007 /* AircraftRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AircraftRowView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F80009 /* FilterMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterMenuView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F80011 /* aircraft_seed_v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = aircraft_seed_v1.json; sourceTree = "<group>"; };
+		A1B2C3D4E5F90001 /* AircraftDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AircraftDetailView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F90003 /* LookupDetailLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupDetailLink.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F90005 /* AircraftSilhouetteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AircraftSilhouetteView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F90007 /* SpecRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecRow.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -138,6 +146,8 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D4E5F80003 /* StatusBadge.swift */,
+				A1B2C3D4E5F90005 /* AircraftSilhouetteView.swift */,
+				A1B2C3D4E5F90007 /* SpecRow.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -174,6 +184,8 @@
 				A1B2C3D4E5F80005 /* AircraftEra.swift */,
 				A1B2C3D4E5F80007 /* AircraftRowView.swift */,
 				A1B2C3D4E5F80009 /* FilterMenuView.swift */,
+				A1B2C3D4E5F90001 /* AircraftDetailView.swift */,
+				A1B2C3D4E5F90003 /* LookupDetailLink.swift */,
 			);
 			path = Database;
 			sourceTree = "<group>";
@@ -330,6 +342,10 @@
 				A1B2C3D4E5F80006 /* AircraftEra.swift in Sources */,
 				A1B2C3D4E5F80008 /* AircraftRowView.swift in Sources */,
 				A1B2C3D4E5F80010 /* FilterMenuView.swift in Sources */,
+				A1B2C3D4E5F90002 /* AircraftDetailView.swift in Sources */,
+				A1B2C3D4E5F90004 /* LookupDetailLink.swift in Sources */,
+				A1B2C3D4E5F90006 /* AircraftSilhouetteView.swift in Sources */,
+				A1B2C3D4E5F90008 /* SpecRow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
