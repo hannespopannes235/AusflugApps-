@@ -334,6 +334,172 @@ function filteredAircraft() {
   });
 }
 
+// ── Fotos: Wikimedia Commons (Standard) + eigene Fotos (Override) ───────────────
+// Hier stehen NUR die echten Commons-Dateinamen. Urheber & Lizenz werden zur
+// Laufzeit LIVE aus der Commons-API geladen (fetchCommonsCredit) – so sind die
+// Angaben immer korrekt und werden niemals im Code "geraten".
+const WIKI_PHOTO = {
+  BCS3: 'Swiss, HB-JCC, Airbus A220-300.jpg',
+  A20N: 'Hannover Airport SKY express Airbus A320-251N SX-TEC (DSC00198).jpg',
+  A359: 'Lufthansa, D-AIXO, Airbus A350-941 (49581146632).jpg',
+  A388: 'Singapore Airlines Airbus A380-800 9V-SKN (7721163326).jpg',
+  B738: 'WestJet Boeing 737-800 C-GXWJ (24734543535).jpg',
+  B77W: 'Air Canada Boeing 777-300ER C-FITU (28483755286).jpg',
+  B789: 'United Airlines, N17963, Boeing 787-9 Dreamliner (35595342772).jpg',
+  B748: 'Lufthansa Boeing 747-8i.jpg',
+  E295: 'Embraer E195-E2 (ERJ 190-400 STD) PS-AEF.jpg',
+  AT76: 'Stobart Air ATR 72-600 (EI-FSL) at Manchester Airport.jpg',
+  B38M: 'Norwegian Air Sweden SE-RTB Boeing 737-MAX 8 Amsterdam Airport Schiphol (AMS EHAM) (52724014741).jpg',
+  A21N: 'Aegean Airlines, SX-NAA, Airbus A321-271NX (51007089432).jpg',
+  A333: 'Lufthansa Airbus A330-300 D-AIKB (7721065166) (2).jpg',
+  B763: 'KLM Boeing 767-300ER PH-BZM (2193203008).jpg',
+  E190: 'Embraer ERJ-190-100LR 190LR (PH-EZH) 03.jpg',
+  CRJ9: 'Eurowings (Lufthansa Regional) Bombardier CRJ900 at Berlin Tegel Airport.JPG',
+  DH8D: 'Wideroe, LN-WDL, Bombardier Dash 8 Q400 (42435285354).jpg',
+  F100: 'Helvetic Airways Fokker 100 (F-28-0100) HB-JVG (25446724953).jpg',
+};
+
+const commonsImg  = n => `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(n)}?width=900`;
+const commonsPage = n => `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(n)}`;
+const commonsApi  = n => `https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*` +
+  `&prop=imageinfo&iiprop=extmetadata&iiextmetadatafilter=Artist|LicenseShortName|LicenseUrl&titles=File:${encodeURIComponent(n)}`;
+
+// Urheber & Lizenz live aus Commons holen → {artist, license} oder null (offline).
+async function fetchCommonsCredit(name) {
+  try {
+    const r = await fetch(commonsApi(name));
+    const j = await r.json();
+    const pages = j.query.pages;
+    const page = pages[Object.keys(pages)[0]];
+    const ext = page.imageinfo[0].extmetadata;
+    const strip = h => (h || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    const artist = strip(ext.Artist && ext.Artist.value) || 'Unbekannt';
+    const license = strip(ext.LicenseShortName && ext.LicenseShortName.value) || '';
+    return { artist, license };
+  } catch (e) {
+    return null;
+  }
+}
+
+// ── Eigene Fotos: IndexedDB (Schlüssel = ICAO, Wert = data-URL) ──────────────────
+const PHOTO_DB = 'spotterdex', PHOTO_STORE = 'photos';
+function openPhotoDb() {
+  return new Promise((res, rej) => {
+    const rq = indexedDB.open(PHOTO_DB, 1);
+    rq.onupgradeneeded = () => rq.result.createObjectStore(PHOTO_STORE);
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej(rq.error);
+  });
+}
+async function getUserPhoto(icao) {
+  try {
+    const db = await openPhotoDb();
+    return await new Promise(res => {
+      const rq = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE).get(icao);
+      rq.onsuccess = () => res(rq.result || null);
+      rq.onerror = () => res(null);
+    });
+  } catch (e) { return null; }
+}
+async function setUserPhoto(icao, dataUrl) {
+  const db = await openPhotoDb();
+  return new Promise(res => {
+    const rq = db.transaction(PHOTO_STORE, 'readwrite').objectStore(PHOTO_STORE).put(dataUrl, icao);
+    rq.onsuccess = () => res(true); rq.onerror = () => res(false);
+  });
+}
+async function delUserPhoto(icao) {
+  const db = await openPhotoDb();
+  return new Promise(res => {
+    const rq = db.transaction(PHOTO_STORE, 'readwrite').objectStore(PHOTO_STORE).delete(icao);
+    rq.onsuccess = () => res(true); rq.onerror = () => res(false);
+  });
+}
+
+// Hochgeladenes Bild verkleinern (spart Speicher) → JPEG-data-URL
+function fileToDataUrl(file, maxW = 1000) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const scale = Math.min(1, maxW / img.width);
+      const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('img')); };
+    img.src = url;
+  });
+}
+
+// Datei-Dialog öffnen → speichern → Fotobereich neu rendern
+function pickPhoto(icao) {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.onchange = async () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      await setUserPhoto(icao, dataUrl);
+      renderPhoto(icao);
+    } catch (e) { /* ignorieren */ }
+  };
+  input.click();
+}
+
+// Fotobereich der Detailansicht asynchron füllen.
+// Priorität: eigenes Foto > Wikimedia-Standard > nur "Hinzufügen"-Button.
+async function renderPhoto(icao) {
+  const wrap = document.getElementById('photo-wrap');
+  if (!wrap) return;
+  const userPhoto = await getUserPhoto(icao);
+  const wiki = WIKI_PHOTO[icao];
+
+  if (userPhoto) {
+    wrap.innerHTML = `
+      <div class="photo-card">
+        <img class="ac-photo" src="${userPhoto}" alt="Eigenes Foto">
+        <span class="photo-credit static"><b>Eigenes Foto</b></span>
+      </div>
+      <div class="photo-actions">
+        <button class="photo-btn" data-photo-pick>Foto ändern</button>
+        <button class="photo-btn danger" data-photo-del>Entfernen</button>
+      </div>`;
+  } else if (wiki) {
+    wrap.innerHTML = `
+      <div class="photo-card">
+        <img class="ac-photo" src="${commonsImg(wiki)}" alt="Foto" loading="lazy"
+             referrerpolicy="no-referrer"
+             onerror="this.closest('.photo-card').classList.add('failed')">
+        <a class="photo-credit" id="photo-credit" href="${commonsPage(wiki)}" target="_blank" rel="noopener">
+          Foto: Wikimedia Commons ↗
+        </a>
+      </div>
+      <div class="photo-actions">
+        <button class="photo-btn" data-photo-pick>Eigenes Foto hinzufügen</button>
+      </div>`;
+    // Echte Attribution live nachladen (keine erfundenen Angaben)
+    fetchCommonsCredit(wiki).then(c => {
+      const el = document.getElementById('photo-credit');
+      if (el && c) el.innerHTML = `Foto: ${c.artist}${c.license ? ' · ' + c.license : ''} · Wikimedia ↗`;
+    });
+  } else {
+    wrap.innerHTML = `
+      <div class="photo-actions">
+        <button class="photo-btn" data-photo-pick>Eigenes Foto hinzufügen</button>
+      </div>`;
+  }
+
+  const pick = wrap.querySelector('[data-photo-pick]');
+  if (pick) pick.addEventListener('click', () => pickPhoto(icao));
+  const del = wrap.querySelector('[data-photo-del]');
+  if (del) del.addEventListener('click', async () => { await delUserPhoto(icao); renderPhoto(icao); });
+}
+
 // ── Silhouette (Canvas) ────────────────────────────────────────────────────────
 function drawSilhouette(canvas, ac, color) {
   const ctx = canvas.getContext('2d');
@@ -517,6 +683,15 @@ function openDetail(icao) {
       </div>
     </div>
 
+    <div class="photo-wrap" id="photo-wrap"></div>
+
+    <a class="detail-live" href="https://www.flightaware.com/live/aircrafttype/${encodeURIComponent(a.icaoCode)}" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M2 12h4l3-9 4 18 3-9h6"/></svg>
+      <span>${a.variant} jetzt live verfolgen</span>
+      <span class="live-ext">↗</span>
+    </a>
+
+    <div class="silhouette-label">Silhouette · Draufsicht</div>
     <div class="silhouette-wrap">
       <canvas id="silhouette-canvas" width="220" height="280"></canvas>
     </div>
@@ -572,6 +747,9 @@ function openDetail(icao) {
     const canvas = document.getElementById('silhouette-canvas');
     if (canvas) drawSilhouette(canvas, a, color + 'CC');
   });
+
+  // Foto laden (eigenes Foto > Wikimedia > nur Button)
+  renderPhoto(icao);
 
   // Events
   document.getElementById('detail-back').addEventListener('click', closeDetail);
@@ -742,11 +920,12 @@ function renderInfo() {
             <li>Jane's All the World's Aircraft</li>
             <li>Herstellerdatenblätter (öffentlich)</li>
           </ul>
-          <p style="margin-top:8px">Maße in SI (m / kg / km / km·h⁻¹). Bildrechte: Je Foto Einzelnachweis erforderlich.</p>
+          <p style="margin-top:8px">Maße in SI (m / kg / km / km·h⁻¹). Fotos: Wikimedia Commons – Urheber und Lizenz werden je Bild live aus der Quelle geladen und unter dem Foto angezeigt. Eigene Fotos kannst du in der Detailansicht hinzufügen.</p>
         </div>
         <div class="info-card">
           <div class="info-card-title">Datenschutz</div>
-          <p>SpotterDex sammelt keine Nutzerdaten. Die App läuft vollständig offline, on-device. Es gibt keine Tracker, keine Analysen, keine Cloud-Verbindung.</p>
+          <p>SpotterDex sammelt keine Nutzerdaten und enthält keine Tracker oder Analyse-Tools. Datenbank, Suche, Vergleich und Quiz funktionieren vollständig offline und on-device. Eigene Fotos bleiben ausschließlich lokal auf deinem Gerät.</p>
+          <p style="margin-top:8px">Optional &amp; nur bei Bedarf: Referenzfotos werden online von Wikimedia Commons geladen, und „Live verfolgen" öffnet FlightAware in einem neuen Tab. Beim Aufruf dieser externen Dienste gelten deren Datenschutzbestimmungen.</p>
         </div>
         <div class="info-card">
           <div class="info-card-title">Technologie</div>
@@ -761,7 +940,7 @@ function renderInfo() {
           <div class="info-card-title">iOS-App</div>
           <p>SpotterDex ist auch als native iOS-App (SwiftUI, iOS 17+) verfügbar – mit on-device ML-Erkennung per Foto und Spaced-Repetition-Lernmodi.</p>
         </div>
-        <p class="info-version">SpotterDex Web v1.1 · ${new Date().getFullYear()}</p>
+        <p class="info-version">SpotterDex Web v1.2 · ${new Date().getFullYear()}</p>
       </div>
     </div>`;
 }
