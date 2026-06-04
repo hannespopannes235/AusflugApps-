@@ -833,7 +833,7 @@ function renderCompare() {
     ];
 
     const headerCells = ['<th></th>', ...list.map(a =>
-      `<th>${a.icaoCode}</th>`)].join('');
+      `<th><span class="cmp-th-variant">${a.variant}</span><span class="cmp-th-icao">${a.icaoCode}</span></th>`)].join('');
 
     const dataRows = specs.map(spec => {
       const vals = list.map(a => a[spec.key]);
