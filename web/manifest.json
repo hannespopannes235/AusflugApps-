@@ -1,0 +1,19 @@
+{
+  "name": "SpotterDex",
+  "short_name": "SpotterDex",
+  "description": "Digitales Handbuch für Planespotter — Flugzeuge erkennen, vergleichen und meistern.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0A0A0E",
+  "theme_color": "#0077CC",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
