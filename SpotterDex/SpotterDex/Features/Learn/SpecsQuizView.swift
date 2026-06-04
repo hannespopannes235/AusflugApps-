@@ -40,7 +40,7 @@ struct SpecsQuizView: View {
                     VStack(spacing: 24) {
                         specCard(spec)
                         choiceGrid(target)
-                        if showResult { resultBanner(target) }
+                        if showResult { resultBanner(target, spec: spec) }
                     }
                     .padding()
                 }
@@ -125,7 +125,7 @@ struct SpecsQuizView: View {
 
     // MARK: – Ergebnis
 
-    private func resultBanner(_ target: Aircraft) -> some View {
+    private func resultBanner(_ target: Aircraft, spec: SpecQuestion) -> some View {
         let correct = selected?.icaoCode == target.icaoCode
         return VStack(spacing: 8) {
             Label(
@@ -134,6 +134,10 @@ struct SpecsQuizView: View {
             )
             .font(.headline)
             .foregroundStyle(correct ? .green : .red)
+            // Spec-Wert als Merkhilfe wiederholen, damit der Nutzer ihn einprägen kann
+            Text("\(spec.label): \(spec.value)")
+                .font(.caption.bold())
+                .foregroundStyle(.secondary)
             Button("Nächste Frage") { nextQuestion() }
                 .buttonStyle(.borderedProminent)
                 .padding(.top, 4)
@@ -142,6 +146,10 @@ struct SpecsQuizView: View {
         .frame(maxWidth: .infinity)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
         .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            correct ? "Richtig! \(spec.label): \(spec.value)" :
+                      "Falsch. Es war \(target.variant). \(spec.label): \(spec.value)"
+        )
     }
 
     // MARK: – Logik
@@ -163,7 +171,17 @@ struct SpecsQuizView: View {
         guard let t = target,
               let ext = specExtractors.randomElement() else { return }
         currentSpec = SpecQuestion(label: ext.0, value: ext.1(t))
-        let wrong   = aircraft.filter { $0.icaoCode != t.icaoCode }.shuffled().prefix(3)
-        choices     = ([t] + wrong).shuffled()
+        choices     = buildChoices(for: t)
+    }
+
+    private func buildChoices(for target: Aircraft) -> [Aircraft] {
+        let lookalikes = target.lookalikes
+            .compactMap { icao in aircraft.first { $0.icaoCode == icao } }
+            .shuffled()
+        let others = aircraft
+            .filter { $0.icaoCode != target.icaoCode && !target.lookalikes.contains($0.icaoCode) }
+            .shuffled()
+        let distractors = Array((lookalikes + others).prefix(3))
+        return ([target] + distractors).shuffled()
     }
 }

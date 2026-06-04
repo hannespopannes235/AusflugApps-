@@ -138,7 +138,19 @@ struct SilhouetteQuizView: View {
         showResult = false
         target     = viewModel.pickAircraft(from: aircraft, records: allRecords, mode: mode)
         guard let t = target else { return }
-        let wrong  = aircraft.filter { $0.icaoCode != t.icaoCode }.shuffled().prefix(3)
-        choices    = ([t] + wrong).shuffled()
+        choices    = buildChoices(for: t)
+    }
+
+    /// Bevorzugt Lookalikes als Ablenkungsantworten – didaktisch wertvoller,
+    /// da der Nutzer genau diese Typen im echten Leben verwechseln würde.
+    private func buildChoices(for target: Aircraft) -> [Aircraft] {
+        let lookalikes = target.lookalikes
+            .compactMap { icao in aircraft.first { $0.icaoCode == icao } }
+            .shuffled()
+        let others = aircraft
+            .filter { $0.icaoCode != target.icaoCode && !target.lookalikes.contains($0.icaoCode) }
+            .shuffled()
+        let distractors = Array((lookalikes + others).prefix(3))
+        return ([target] + distractors).shuffled()
     }
 }
