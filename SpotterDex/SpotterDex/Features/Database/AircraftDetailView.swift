@@ -3,10 +3,12 @@ import SwiftData
 
 struct AircraftDetailView: View {
     @Bindable var aircraft: Aircraft
+    @State private var photoCredit: WikimediaPhotoService.PhotoCredit?
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                photoSection
                 headerCard
                 Divider()
                 dimensionsSection
@@ -22,6 +24,82 @@ struct AircraftDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { favoriteButton }
         }
+        // Credits werden bei jedem Aufruf live von der Commons-API geladen.
+        // Bei fehlendem Netz bleibt photoCredit nil → kein Crash, kein falscher Nachweis.
+        .task(id: aircraft.icaoCode) {
+            photoCredit = await WikimediaPhotoService.fetchCredit(for: aircraft.icaoCode)
+        }
+    }
+
+    // MARK: – Foto / Silhouette
+
+    @ViewBuilder
+    private var photoSection: some View {
+        if let imageURL = WikimediaPhotoService.imageURL(for: aircraft.icaoCode) {
+            VStack(alignment: .leading, spacing: 0) {
+                AsyncImage(url: imageURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 220)
+                            .clipped()
+                            .accessibilityLabel("\(aircraft.variant) Foto")
+                    case .failure:
+                        // Offline oder Lade-Fehler → Silhouette
+                        silhouetteFallback
+                    case .empty:
+                        Color(.systemGray5)
+                            .frame(height: 220)
+                            .overlay { ProgressView() }
+                    @unknown default:
+                        silhouetteFallback
+                    }
+                }
+
+                // Bildnachweis – erst sichtbar wenn die API geantwortet hat
+                if let credit = photoCredit {
+                    HStack(spacing: 4) {
+                        Image(systemName: "camera")
+                            .imageScale(.small)
+                            .accessibilityHidden(true)
+                        Text("© \(credit.artist) · \(credit.license)")
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Spacer(minLength: 4)
+                        Link("Quelle ↗", destination: credit.pageURL)
+                            .foregroundStyle(.tint)
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+                    .padding(.vertical, 6)
+                    .background(.regularMaterial)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(
+                        "Bildnachweis: \(credit.artist), \(credit.license). Link zu Wikimedia Commons."
+                    )
+                }
+            }
+        } else {
+            // Kein Foto für diesen Typ → Silhouette als Platzhalter
+            silhouetteFallback
+        }
+    }
+
+    private var silhouetteFallback: some View {
+        AircraftSilhouetteView(
+            wingspan: aircraft.wingspan,
+            length:   aircraft.length,
+            color:    .accentColor
+        )
+        .frame(maxWidth: .infinity)
+        .frame(height: 140)
+        .padding()
+        .background(Color(.systemGray6))
+        .accessibilityLabel("Silhouette von \(aircraft.variant)")
     }
 
     // MARK: – Header
