@@ -307,7 +307,7 @@ struct SpotView: View {
                 .foregroundStyle(.secondary)
             Text("Kein Modell geladen")
                 .font(.headline)
-            Text("Trainiere SpotterDexClassifier.mlpackage mit Create ML und lege es in den ML/-Ordner. Details stehen im SpotViewModel.")
+            Text("Modell mit der Pipeline in ml/ erzeugen (build_dataset.py → train_classifier.swift) und SpotterDexClassifier.mlpackage in den ML/-Ordner legen. Siehe ml/README.md.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -346,13 +346,13 @@ struct SpotView: View {
         VStack(alignment: .leading, spacing: 0) {
             SectionHeader(title: "ML-Pipeline", systemImage: "cpu")
             VStack(alignment: .leading, spacing: 8) {
-                pipelineStep("1. Datensatz", detail: "100–500 Fotos/Typ, ICAO-Code als Klassenname, CC-lizenzierte Bilder")
+                pipelineStep("1. Datensatz", detail: "ml/build_dataset.py – lädt CC-lizenzierte Commons-Fotos je ICAO-Typ, protokolliert jede Lizenz")
                 Divider()
-                pipelineStep("2. Training",  detail: "Create ML → Image Classifier → SpotterDexClassifier.mlpackage exportieren")
+                pipelineStep("2. Training",  detail: "swift ml/train_classifier.swift – Create ML → SpotterDexClassifier.mlpackage")
                 Divider()
-                pipelineStep("3. Einbinden", detail: "mlpackage in ML/-Ordner → pbxproj registrieren → App neu bauen")
+                pipelineStep("3. Einbinden", detail: "mlpackage in ML/-Ordner ziehen, Target-Membership setzen → App neu bauen")
                 Divider()
-                pipelineStep("4. Bildrechte", detail: "Nur CC BY / CC BY-SA oder eigene Fotos; Quelle im imageLicense-Feld belegen")
+                pipelineStep("4. Bildrechte", detail: "Nur freie Lizenzen; Attribution-Belege in ml/dataset/credits.csv. Details: ml/README.md")
             }
             .padding(.horizontal)
             .padding(.bottom, 12)

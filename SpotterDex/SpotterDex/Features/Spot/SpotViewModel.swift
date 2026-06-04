@@ -19,28 +19,21 @@ enum SpotState {
 
 /// Kapselt die Core-ML-Inferenz.
 ///
-/// ## ML-Pipeline (Übersicht)
+/// ## ML-Pipeline
 ///
-/// **1. Datensatz**
-/// - Ca. 100–500 Bilder pro Klasse; Klassen-Label = ICAO-Code (z. B. "A20N")
-/// - Diverse Perspektiven (Seitenansicht, Landeansicht, Draufsicht)
-/// - Unterschiedliche Lichtverhältnisse, Airports, Lackierungen
-/// - Nur Bilder mit CC-BY / CC-BY-SA-Lizenz oder eigene Aufnahmen nutzen
-///   (Quelle belegen; imageLicense-Feld im Aircraft-Modell nutzen)
+/// Die komplette, rechtlich saubere Trainings-Pipeline liegt im Repo unter `ml/`
+/// (siehe `ml/README.md`). Kurzfassung:
 ///
-/// **2. Training mit Create ML**
-/// 1. Create ML App öffnen → "New Document" → "Image Classifier"
-/// 2. Trainings-Ordner wählen (Unterordner = ICAO-Labels)
-/// 3. Augmentations aktivieren (Flip, Rotation, Blur, Noise)
-/// 4. Training starten → nach Abschluss als "SpotterDexClassifier.mlpackage" exportieren
+/// 1. **Datensatz**: `python3 ml/build_dataset.py` lädt CC-lizenzierte Fotos je
+///    ICAO-Typ aus Wikimedia Commons und protokolliert jede Lizenz in credits.csv.
+///    Klassen-Label = ICAO-Code (z. B. "A20N") – muss zu aircraft_seed_v1.json passen.
+/// 2. **Training**: `swift ml/train_classifier.swift` erzeugt mit Create ML das
+///    `SpotterDexClassifier.mlpackage` (inkl. Augmentations).
+/// 3. **Einbinden**: .mlpackage nach `SpotterDex/SpotterDex/ML/` ziehen und zur
+///    Target-Membership hinzufügen. Dieser ViewModel findet es dann automatisch –
+///    bis dahin läuft der Mock-Modus (isMockMode).
 ///
-/// **3. Integration in Xcode**
-/// 1. SpotterDexClassifier.mlpackage in den ML/-Ordner des Projekts ziehen
-/// 2. In project.pbxproj als PBXFileReference + PBXBuildFile registrieren
-///    (oder direkt in Xcode hineinziehen)
-/// 3. App neu bauen – dieser ViewModel findet das Modell automatisch
-///
-/// **4. Konfidenz-Schwellen** (in classifyWithVision konfigurierbar)
+/// **Konfidenz-Schwellen** (in classifyWithVision / ClassificationResult.level):
 /// - ≥ 0.70 → hohe Konfidenz (grün)
 /// - ≥ 0.40 → mittlere Konfidenz (orange)
 /// - < 0.15 gesamt → "Kein Flugzeug erkannt"-Fallback

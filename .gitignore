@@ -46,6 +46,14 @@ Pods/
 # ─── Core ML ──────────────────────────────────────────────────────────────────
 *.mlmodelc/
 
+# ─── ML-Trainingsdaten (lokal, nicht ins Repo) ────────────────────────────────
+# Heruntergeladene Trainingsbilder sind groß und werden lokal erzeugt.
+# Die Lizenz-Belege (credits.*) sollen aber als Nachweis aufbewahrt werden.
+ml/dataset/*/
+!ml/dataset/credits.csv
+!ml/dataset/credits.json
+ml/*.mlpackage/
+
 # ─── JetBrains / VS Code ──────────────────────────────────────────────────────
 .idea/
 *.swp
@@ -55,3 +63,7 @@ Pods/
 # ─── Misc ─────────────────────────────────────────────────────────────────────
 *.log
 *.tmp
+
+# ─── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
