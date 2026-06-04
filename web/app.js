@@ -940,7 +940,7 @@ function renderInfo() {
           <div class="info-card-title">iOS-App</div>
           <p>SpotterDex ist auch als native iOS-App (SwiftUI, iOS 17+) verfügbar – mit on-device ML-Erkennung per Foto und Spaced-Repetition-Lernmodi.</p>
         </div>
-        <p class="info-version">SpotterDex Web v1.2 · ${new Date().getFullYear()}</p>
+        <p class="info-version">SpotterDex Web v1.3 · ${new Date().getFullYear()}</p>
       </div>
     </div>`;
 }
