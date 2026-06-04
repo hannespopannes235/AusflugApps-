@@ -14,7 +14,7 @@ import SwiftData
 
 struct SeedService {
     private static let seedVersionKey = "com.spotterdex.seedVersion"
-    static let currentSeedVersion = 1
+    static let currentSeedVersion = 2
 
     static func seedIfNeeded(modelContext: ModelContext) throws {
         let stored = UserDefaults.standard.integer(forKey: seedVersionKey)
@@ -26,7 +26,19 @@ struct SeedService {
         else { return }   // fehlendes Bundle-JSON → stille leere DB, kein Absturz
 
         let seed = try JSONDecoder().decode(AircraftSeed.self, from: data)
-        seed.aircraft.map(\.toAircraft).forEach { modelContext.insert($0) }
+
+        // Idempotent: nur noch nicht vorhandene Typen (per ICAO-Code) einfügen.
+        // So erzeugt ein Versions-Bump mit neuen Mustern bei bestehenden
+        // Installationen KEINE Duplikate, und Nutzerdaten (z. B. Favoriten)
+        // bleiben unangetastet. Bei Erstinstallation ist die Menge leer → alles wird importiert.
+        let existingCodes = Set(
+            try modelContext.fetch(FetchDescriptor<Aircraft>()).map(\.icaoCode)
+        )
+        seed.aircraft
+            .filter { !existingCodes.contains($0.icaoCode) }
+            .map(\.toAircraft)
+            .forEach { modelContext.insert($0) }
+
         try modelContext.save()
         UserDefaults.standard.set(currentSeedVersion, forKey: seedVersionKey)
     }
