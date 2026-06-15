@@ -833,7 +833,7 @@ function renderCompare() {
     ];
 
     const headerCells = ['<th></th>', ...list.map(a =>
-      `<th>${a.icaoCode}</th>`)].join('');
+      `<th><span class="cmp-th-variant">${a.variant}</span><span class="cmp-th-icao">${a.icaoCode}</span></th>`)].join('');
 
     const dataRows = specs.map(spec => {
       const vals = list.map(a => a[spec.key]);
@@ -940,7 +940,7 @@ function renderInfo() {
           <div class="info-card-title">iOS-App</div>
           <p>SpotterDex ist auch als native iOS-App (SwiftUI, iOS 17+) verfügbar – mit on-device ML-Erkennung per Foto und Spaced-Repetition-Lernmodi.</p>
         </div>
-        <p class="info-version">SpotterDex Web v1.2 · ${new Date().getFullYear()}</p>
+        <p class="info-version">SpotterDex Web v1.3 · ${new Date().getFullYear()}</p>
       </div>
     </div>`;
 }
