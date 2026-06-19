@@ -423,6 +423,22 @@ a      { color: var(--blue); text-decoration: none; }
 .quiz-silhouette { margin: 0 0 var(--sp-m); }
 .quiz-hint { text-align: center; font-size: 15px; color: var(--text2); margin-bottom: var(--sp-m); }
 
+/* Foto-Quiz: Bühne mit Foto bzw. Silhouetten-Fallback */
+.quiz-photo-wrap {
+  position: relative; margin: 0 0 var(--sp-m);
+  border-radius: var(--r-card); overflow: hidden; background: var(--bg-input);
+  aspect-ratio: 3 / 2;
+}
+.quiz-photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+.quiz-fallback { width: 100%; height: 100%; display: block; }
+.quiz-credit {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  font-size: 11px; color: #fff; background: rgba(0,0,0,.55);
+  padding: 4px 8px; line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.quiz-credit a { color: #fff; text-decoration: underline; }
+
 .quiz-feedback {
   text-align: center; font-size: 15px; font-weight: 600;
   padding: 12px; border-radius: var(--r-btn); margin-bottom: var(--sp-m);

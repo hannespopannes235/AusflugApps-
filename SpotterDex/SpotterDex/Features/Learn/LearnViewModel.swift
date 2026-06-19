@@ -5,6 +5,7 @@ import Observation
 // MARK: – Lernmodus
 
 enum LearnMode: String, CaseIterable, Identifiable {
+    case photo      = "Foto"
     case silhouette = "Silhouette"
     case specs      = "Specs"
     case spotDiff   = "Verwechslung"
@@ -13,6 +14,7 @@ enum LearnMode: String, CaseIterable, Identifiable {
 
     var systemImage: String {
         switch self {
+        case .photo:      "photo"
         case .silhouette: "skew"
         case .specs:      "list.bullet.clipboard"
         case .spotDiff:   "questionmark.diamond"
@@ -21,6 +23,7 @@ enum LearnMode: String, CaseIterable, Identifiable {
 
     var description: String {
         switch self {
+        case .photo:      "Erkenne den Typ am echten Foto"
         case .silhouette: "Erkenne den Typ an der Silhouette"
         case .specs:      "Ordne Specs dem richtigen Typ zu"
         case .spotDiff:   "Unterscheide Verwechslungspartner"

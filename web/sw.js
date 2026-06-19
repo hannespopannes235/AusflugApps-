@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE = 'spotterdex-v4';
+const CACHE = 'spotterdex-v5';
 const ASSETS = [
   './index.html',
   './style.css',
