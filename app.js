@@ -940,7 +940,7 @@ function renderInfo() {
           <div class="info-card-title">iOS-App</div>
           <p>SpotterDex ist auch als native iOS-App (SwiftUI, iOS 17+) verfügbar – mit on-device ML-Erkennung per Foto und Spaced-Repetition-Lernmodi.</p>
         </div>
-        <p class="info-version">SpotterDex Web v1.3 · ${new Date().getFullYear()}</p>
+        <p class="info-version">SpotterDex Web v1.4 · ${new Date().getFullYear()}</p>
       </div>
     </div>`;
 }
@@ -1046,10 +1046,24 @@ function renderQuiz() {
     ? `<div class="quiz-feedback ${correct ? 'ok' : 'no'}">
         ${correct ? '✓ Richtig!' : `✗ Es ist die <b>${answer.variant}</b>`}
        </div>`
-    : `<p class="quiz-hint">Welcher Flugzeugtyp zeigt diese Silhouette?</p>`;
+    : `<p class="quiz-hint">Welcher Flugzeugtyp ist das?</p>`;
 
   const nextBtn = answered
     ? `<button class="quiz-next" id="quiz-next">Nächste Frage →</button>` : '';
+
+  // Foto-Quiz: echtes Wikimedia-Foto (hohe Trennschärfe). Fällt offline / bei
+  // Ladefehler automatisch auf die neutrale Silhouette zurück (offline-first).
+  const photoName = WIKI_PHOTO[answer.icaoCode];
+  const stageHtml = photoName
+    ? `<div class="quiz-photo-wrap">
+         <img id="quiz-photo" class="quiz-photo" alt="Welcher Flugzeugtyp ist das?"
+              src="${commonsImg(photoName)}">
+         <canvas id="quiz-canvas" width="240" height="240" class="quiz-fallback" hidden></canvas>
+         <span class="quiz-credit" id="quiz-credit"></span>
+       </div>`
+    : `<div class="silhouette-wrap quiz-silhouette">
+         <canvas id="quiz-canvas" width="240" height="240"></canvas>
+       </div>`;
 
   appEl.innerHTML = `
     <div id="view-quiz" class="view active">
@@ -1062,20 +1076,42 @@ function renderQuiz() {
         </div>
       </div>
       <div class="quiz-body">
-        <div class="silhouette-wrap quiz-silhouette">
-          <canvas id="quiz-canvas" width="240" height="240"></canvas>
-        </div>
+        ${stageHtml}
         ${feedbackText}
         <div class="quiz-options">${optionsHtml}</div>
         ${nextBtn}
       </div>
     </div>`;
 
-  // Silhouette neutral zeichnen (Herstellerfarbe würde die Antwort verraten)
-  requestAnimationFrame(() => {
+  // Foto laden + Bildnachweis; bei Fehler Silhouette als Fallback zeichnen.
+  if (photoName) {
+    const img = document.getElementById('quiz-photo');
     const canvas = document.getElementById('quiz-canvas');
-    if (canvas) drawSilhouette(canvas, answer, '#6E7681');
-  });
+    if (img) {
+      img.onerror = () => {            // offline / Bild nicht ladbar → Silhouette
+        img.hidden = true;
+        if (canvas) { canvas.hidden = false; drawSilhouette(canvas, answer, '#6E7681'); }
+      };
+    }
+    // Attribution live laden. Urheber + Lizenz verraten den Typ nicht; die
+    // Quelle-URL (Dateiname enthält Typ) erst NACH der Antwort einblenden.
+    const creditEl = document.getElementById('quiz-credit');
+    if (creditEl) {
+      fetchCommonsCredit(photoName).then(c => {
+        if (!c) return;
+        const src = answered
+          ? ` · <a href="${commonsPage(photoName)}" target="_blank" rel="noopener">Quelle ↗</a>`
+          : '';
+        creditEl.innerHTML = `© ${c.artist} · ${c.license}${src}`;
+      });
+    }
+  } else {
+    // Kein Foto vorhanden → neutrale Silhouette (Herstellerfarbe würde verraten)
+    requestAnimationFrame(() => {
+      const canvas = document.getElementById('quiz-canvas');
+      if (canvas) drawSilhouette(canvas, answer, '#6E7681');
+    });
+  }
 
   if (answered) {
     const next = document.getElementById('quiz-next');
