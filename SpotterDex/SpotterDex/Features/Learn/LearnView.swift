@@ -72,10 +72,9 @@ struct LearnView: View {
     @ViewBuilder
     private func quizDestination(_ mode: LearnMode) -> some View {
         switch mode {
-        case .photo:      PhotoQuizView(aircraft: allAircraft,      viewModel: viewModel)
-        case .silhouette: SilhouetteQuizView(aircraft: allAircraft, viewModel: viewModel)
-        case .specs:      SpecsQuizView(aircraft: allAircraft,      viewModel: viewModel)
-        case .spotDiff:   SpotDiffView(aircraft: allAircraft,       viewModel: viewModel)
+        case .photo:    PhotoQuizView(aircraft: allAircraft, viewModel: viewModel)
+        case .specs:    SpecsQuizView(aircraft: allAircraft, viewModel: viewModel)
+        case .spotDiff: SpotDiffView(aircraft: allAircraft,  viewModel: viewModel)
         }
     }
 

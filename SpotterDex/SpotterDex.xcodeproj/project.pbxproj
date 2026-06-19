@@ -33,7 +33,6 @@
 		A1B2C3D4E5FA0002 /* LearningRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FA0001 /* LearningRecord.swift */; };
 		A1B2C3D4E5FD0002 /* WikimediaPhotoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FD0001 /* WikimediaPhotoService.swift */; };
 		A1B2C3D4E5FD0004 /* PhotoQuizView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FD0003 /* PhotoQuizView.swift */; };
-		A1B2C3D4E5FA0004 /* SilhouetteQuizView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FA0003 /* SilhouetteQuizView.swift */; };
 		A1B2C3D4E5FA0006 /* SpecsQuizView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FA0005 /* SpecsQuizView.swift */; };
 		A1B2C3D4E5FA0008 /* SpotDiffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FA0007 /* SpotDiffView.swift */; };
 		A1B2C3D4E5FA0010 /* ChoiceButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FA0009 /* ChoiceButton.swift */; };
@@ -86,7 +85,6 @@
 		A1B2C3D4E5FA0001 /* LearningRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningRecord.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5FD0001 /* WikimediaPhotoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WikimediaPhotoService.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5FD0003 /* PhotoQuizView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoQuizView.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5FA0003 /* SilhouetteQuizView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilhouetteQuizView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5FA0005 /* SpecsQuizView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecsQuizView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5FA0007 /* SpotDiffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotDiffView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5FA0009 /* ChoiceButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChoiceButton.swift; sourceTree = "<group>"; };
@@ -240,7 +238,6 @@
 				A1B2C3D4E5F70011 /* LearnView.swift */,
 				A1B2C3D4E5F70013 /* LearnViewModel.swift */,
 				A1B2C3D4E5FD0003 /* PhotoQuizView.swift */,
-				A1B2C3D4E5FA0003 /* SilhouetteQuizView.swift */,
 				A1B2C3D4E5FA0005 /* SpecsQuizView.swift */,
 				A1B2C3D4E5FA0007 /* SpotDiffView.swift */,
 			);
@@ -408,7 +405,6 @@
 				A1B2C3D4E5FA0002 /* LearningRecord.swift in Sources */,
 				A1B2C3D4E5FD0002 /* WikimediaPhotoService.swift in Sources */,
 				A1B2C3D4E5FD0004 /* PhotoQuizView.swift in Sources */,
-				A1B2C3D4E5FA0004 /* SilhouetteQuizView.swift in Sources */,
 				A1B2C3D4E5FA0006 /* SpecsQuizView.swift in Sources */,
 				A1B2C3D4E5FA0008 /* SpotDiffView.swift in Sources */,
 				A1B2C3D4E5FA0010 /* ChoiceButton.swift in Sources */,
