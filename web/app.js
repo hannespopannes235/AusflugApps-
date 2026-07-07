@@ -292,7 +292,8 @@ const state = {
   favorites: new Set((arr => Array.isArray(arr) ? arr : [])(loadJson('sd_favs', []))),
   compareList: (arr => Array.isArray(arr) ? arr : [])(loadJson('sd_compare', [])),
   detailStack: [],   // ICAO stack for back navigation
-  quiz: null,        // {answer, options[], picked, score, total, streak, best}
+  quizMode: 'photo', // 'photo' | 'specs'
+  quiz: null,        // {mode, answer, specIdx, options[], picked, score, total, streak, best}
 };
 
 // ── DOM refs ───────────────────────────────────────────────────────────────────
@@ -1004,13 +1005,94 @@ function renderInfo() {
           <div class="info-card-title">iOS-App</div>
           <p>SpotterDex ist auch als native iOS-App (SwiftUI, iOS 17+) verfügbar – mit on-device ML-Erkennung per Foto und Spaced-Repetition-Lernmodi.</p>
         </div>
-        <p class="info-version">SpotterDex Web v1.6 · ${new Date().getFullYear()}</p>
+        <p class="info-version">SpotterDex Web v1.7 · ${new Date().getFullYear()}</p>
       </div>
     </div>`;
 }
 
 // ── Quiz view ──────────────────────────────────────────────────────────────────
-const QUIZ_BEST_KEY = 'sd_quiz_best';
+// Zwei Modi: Foto-Quiz und Specs-Quiz. Bestserie wird pro Modus gespeichert.
+const QUIZ_BEST_KEYS = { photo: 'sd_quiz_best', specs: 'sd_quiz_best_specs' };
+
+// ── SM-2 Spaced Repetition (identische Logik wie LearningRecord in der iOS-App) ─
+// Pro (Modus, Typ) ein Record in localStorage: Fragenauswahl bevorzugt fällige
+// und noch nie gesehene Typen mit der niedrigsten Trefferquote – statt reinem
+// Zufall wiederholt das Quiz gezielt, was schlecht sitzt.
+const LEARN_KEY = 'sd_learn';
+const learnStore = (o => (o && typeof o === 'object' && !Array.isArray(o)) ? o : {})(
+  loadJson(LEARN_KEY, {})
+);
+
+function learnRec(mode, icao) {
+  const key = `${mode}:${icao}`;
+  if (!learnStore[key]) {
+    learnStore[key] = { ef: 2.5, interval: 1, reps: 0, next: 0,
+                        streak: 0, correct: 0, attempts: 0 };
+  }
+  return learnStore[key];
+}
+
+function recordLearnAnswer(mode, icao, correct) {
+  const rec = learnRec(mode, icao);
+  rec.attempts += 1;
+  if (correct) {
+    rec.correct += 1;
+    rec.streak += 1;
+    const q = 4;   // feste Qualität wie in der iOS-App
+    rec.ef = Math.max(1.3, rec.ef + 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02));
+    if (rec.reps === 0)      rec.interval = 1;
+    else if (rec.reps === 1) rec.interval = 6;
+    else                     rec.interval = Math.round(rec.interval * rec.ef);
+    rec.reps += 1;
+  } else {
+    rec.streak = 0; rec.reps = 0; rec.interval = 1;
+  }
+  rec.next = Date.now() + rec.interval * 86400000;   // Intervall in Tagen
+  localStorage.setItem(LEARN_KEY, JSON.stringify(learnStore));
+}
+
+// Nächstes Ziel nach SM-2-Priorität (Pendant zu LearnViewModel.pickAircraft):
+// 1. fällige/ungesehene Typen, niedrigste Trefferquote zuerst  2. sonst zufällig
+function pickQuizTarget(mode, excludeIcao) {
+  const pool = AIRCRAFT.filter(a => a.icaoCode !== excludeIcao);
+  const acc = a => {
+    const rec = learnStore[`${mode}:${a.icaoCode}`];
+    return rec && rec.attempts ? rec.correct / rec.attempts : 0;
+  };
+  const due = pool.filter(a => {
+    const rec = learnStore[`${mode}:${a.icaoCode}`];
+    return !rec || rec.next <= Date.now();
+  });
+  if (due.length) return due.reduce((worst, a) => acc(a) < acc(worst) ? a : worst);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ── Specs-Quiz: Kennzahl → Typ (Pendant zur iOS-SpecsQuizView) ──────────────────
+const SPEC_QUESTIONS = [
+  { label: 'Spannweite',            get: a => `${fmt(a.wingspan, 1)} m` },
+  { label: 'Länge',                 get: a => `${fmt(a.length, 1)} m` },
+  { label: 'MTOW',                  get: a => `${fmt(a.mtow / 1000, 1)} t` },
+  { label: 'Reichweite',            get: a => `${fmt(a.range)} km` },
+  { label: 'Reisegeschwindigkeit',  get: a => `${fmt(a.cruiseSpeed)} km/h` },
+  { label: 'Passagierkapazität',    get: a => `${fmt(a.passengerCapacity)} Pax` },
+];
+
+// Distraktoren mit IDENTISCHEM Anzeigewert sind ausgeschlossen –
+// sonst gäbe es zwei "richtige" Antworten.
+function buildSpecOptions(answer, spec) {
+  const val = spec.get(answer);
+  const looks = shuffle((answer.lookalikes || []).map(find).filter(Boolean)
+    .filter(a => a.icaoCode !== answer.icaoCode));
+  const rest = shuffle(AIRCRAFT.filter(a => a.icaoCode !== answer.icaoCode));
+  const distractors = [];
+  for (const a of [...looks, ...rest]) {
+    if (distractors.length >= 3) break;
+    if (distractors.some(d => d.icaoCode === a.icaoCode)) continue;
+    if (spec.get(a) === val) continue;
+    distractors.push(a);
+  }
+  return shuffle([answer, ...distractors]);
+}
 
 // Fisher-Yates Shuffle (nicht-mutierend)
 function shuffle(arr) {
@@ -1048,18 +1130,27 @@ function buildQuizOptions(answer) {
 }
 
 // Neue Frage – Score/Serie/Bestwert bleiben über die Session erhalten.
-// Die vorherige Antwort wird ausgeschlossen: nie zweimal dieselbe Frage in Folge.
+// Zielauswahl per SM-2 (fällige Typen zuerst); die vorherige Antwort wird
+// ausgeschlossen: nie zweimal dieselbe Frage in Folge.
 function newQuizRound() {
+  const mode = state.quizMode;
   const prevAnswer = state.quiz ? state.quiz.answer : null;
-  const pool = AIRCRAFT.filter(a => a.icaoCode !== prevAnswer);
-  const answer = pool[Math.floor(Math.random() * pool.length)];
-  const prev = state.quiz || {
+  const answer = pickQuizTarget(mode, prevAnswer);
+  const specIdx = mode === 'specs'
+    ? Math.floor(Math.random() * SPEC_QUESTIONS.length) : null;
+  const spec = specIdx !== null ? SPEC_QUESTIONS[specIdx] : null;
+
+  // Session-Statistik bleibt nur innerhalb desselben Modus erhalten.
+  const prev = (state.quiz && state.quiz.mode === mode) ? state.quiz : {
     score: 0, total: 0, streak: 0,
-    best: parseInt(localStorage.getItem(QUIZ_BEST_KEY) || '0', 10),
+    best: parseInt(localStorage.getItem(QUIZ_BEST_KEYS[mode]) || '0', 10),
   };
   state.quiz = {
+    mode,
     answer: answer.icaoCode,
-    options: buildQuizOptions(answer).map(a => a.icaoCode),
+    specIdx,
+    options: (spec ? buildSpecOptions(answer, spec) : buildQuizOptions(answer))
+      .map(a => a.icaoCode),
     picked: null,
     score: prev.score,
     total: prev.total,
@@ -1074,23 +1165,26 @@ function answerQuiz(icao) {
   if (!q || q.picked) return;          // Doppel-Taps ignorieren
   q.picked = icao;
   q.total += 1;
-  if (icao === q.answer) {
+  const correct = icao === q.answer;
+  if (correct) {
     q.score += 1;
     q.streak += 1;
     if (q.streak > q.best) {
       q.best = q.streak;
-      localStorage.setItem(QUIZ_BEST_KEY, String(q.best));
+      localStorage.setItem(QUIZ_BEST_KEYS[q.mode], String(q.best));
     }
   } else {
     q.streak = 0;
   }
+  recordLearnAnswer(q.mode, q.answer, correct);   // SM-2-Fortschritt persistieren
   renderQuiz();
 }
 
 function renderQuiz() {
-  if (!state.quiz) { newQuizRound(); return; }   // erste Frage erzeugen
+  if (!state.quiz || state.quiz.mode !== state.quizMode) { newQuizRound(); return; }
   const q = state.quiz;
   const answer = find(q.answer);
+  const spec = q.specIdx !== null ? SPEC_QUESTIONS[q.specIdx] : null;
   const answered = q.picked !== null;
   const correct = answered && q.picked === q.answer;
   const acc = q.total ? Math.round(q.score / q.total * 100) : 0;
@@ -1110,19 +1204,27 @@ function renderQuiz() {
   }).join('');
 
   // role="status": Screenreader lesen das Ergebnis nach der Antwort vor.
+  // Im Specs-Modus dient die Kennzahl in der Auflösung als Merkhilfe.
+  const specHint = spec && answered && !correct
+    ? ` <span class="quiz-spec-hint">(${spec.label}: ${spec.get(answer)})</span>` : '';
   const feedbackText = answered
     ? `<div class="quiz-feedback ${correct ? 'ok' : 'no'}" role="status">
-        ${correct ? '✓ Richtig!' : `✗ Es ist die <b>${answer.variant}</b>`}
+        ${correct ? '✓ Richtig!' : `✗ Es ist die <b>${answer.variant}</b>${specHint}`}
        </div>`
-    : `<p class="quiz-hint">Welcher Flugzeugtyp ist das?</p>`;
+    : `<p class="quiz-hint">${spec ? 'Zu welchem Typ gehört dieser Wert?' : 'Welcher Flugzeugtyp ist das?'}</p>`;
 
   const nextBtn = answered
     ? `<button class="quiz-next" id="quiz-next">Nächste Frage →</button>` : '';
 
-  // Foto-Quiz: echtes Wikimedia-Foto (hohe Trennschärfe). Fällt offline / bei
-  // Ladefehler automatisch auf die neutrale Silhouette zurück (offline-first).
-  const photoName = WIKI_PHOTO[answer.icaoCode];
-  const stageHtml = photoName
+  // Bühne: Specs-Modus zeigt die Kennzahl, Foto-Modus das Wikimedia-Foto
+  // (fällt offline / bei Ladefehler automatisch auf die Silhouette zurück).
+  const photoName = spec ? null : WIKI_PHOTO[answer.icaoCode];
+  const stageHtml = spec
+    ? `<div class="quiz-spec-card">
+         <div class="quiz-spec-label">${spec.label}</div>
+         <div class="quiz-spec-value">${spec.get(answer)}</div>
+       </div>`
+    : photoName
     ? `<div class="quiz-photo-wrap">
          <img id="quiz-photo" class="quiz-photo" alt="Welcher Flugzeugtyp ist das?"
               src="${commonsImg(photoName)}">
@@ -1133,10 +1235,19 @@ function renderQuiz() {
          <canvas id="quiz-canvas" width="240" height="240"></canvas>
        </div>`;
 
+  const modeSwitch = `
+    <div class="quiz-modes" role="group" aria-label="Quiz-Modus">
+      <button class="chip${q.mode === 'photo' ? ' active' : ''}" data-quiz-mode="photo"
+        aria-pressed="${q.mode === 'photo'}">📷 Foto</button>
+      <button class="chip${q.mode === 'specs' ? ' active' : ''}" data-quiz-mode="specs"
+        aria-pressed="${q.mode === 'specs'}">📋 Specs</button>
+    </div>`;
+
   appEl.innerHTML = `
     <div id="view-quiz" class="view active">
       <div class="view-header">
         <h1 class="view-title">Quiz</h1>
+        ${modeSwitch}
         <div class="quiz-stats">
           <div class="qstat"><span class="qstat-val">${q.score}/${q.total}</span><span class="qstat-lbl">Richtig · ${acc}%</span></div>
           <div class="qstat"><span class="qstat-val">${q.streak}</span><span class="qstat-lbl">Serie</span></div>
@@ -1267,6 +1378,17 @@ appEl.addEventListener('click', e => {
   const quizPick = e.target.closest('[data-quiz-pick]');
   if (quizPick) {
     answerQuiz(quizPick.dataset.quizPick);
+    return;
+  }
+
+  // Quiz-Modus-Umschalter (muss VOR dem generischen .chip-Handler stehen)
+  const modeBtn = e.target.closest('[data-quiz-mode]');
+  if (modeBtn) {
+    if (state.quizMode !== modeBtn.dataset.quizMode) {
+      state.quizMode = modeBtn.dataset.quizMode;
+      state.quiz = null;   // neue Runde im neuen Modus (Session-Stats pro Modus)
+      renderQuiz();
+    }
     return;
   }
 

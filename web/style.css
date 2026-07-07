@@ -428,6 +428,7 @@ button:focus-visible,
 .picker-item-text .picao { font-size: 13px; color: var(--text2); }
 
 /* ── Quiz view ─────────────────────────────────────────────────────────────── */
+.quiz-modes { display: flex; gap: var(--sp-s); margin-bottom: var(--sp-s); }
 .quiz-stats { display: flex; gap: var(--sp-s); }
 .qstat {
   flex: 1; background: var(--bg-card); border-radius: var(--r-btn);
@@ -439,6 +440,22 @@ button:focus-visible,
 .quiz-body { padding: var(--sp-s) var(--sp-m) var(--sp-l); }
 .quiz-silhouette { margin: 0 0 var(--sp-m); }
 .quiz-hint { text-align: center; font-size: 15px; color: var(--text2); margin-bottom: var(--sp-m); }
+.quiz-spec-hint { font-weight: 400; color: inherit; opacity: .85; }
+
+/* Specs-Quiz: große Kennzahl als Bühne */
+.quiz-spec-card {
+  background: var(--bg-card); border-radius: var(--r-card); box-shadow: var(--shadow);
+  padding: var(--sp-l) var(--sp-m); margin-bottom: var(--sp-m);
+  text-align: center;
+}
+.quiz-spec-label {
+  font-size: 12px; font-weight: 700; color: var(--text2);
+  text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px;
+}
+.quiz-spec-value {
+  font-size: 34px; font-weight: 700; letter-spacing: -.5px;
+  font-variant-numeric: tabular-nums;
+}
 
 /* Foto-Quiz: Bühne mit Foto bzw. Silhouetten-Fallback */
 .quiz-photo-wrap {
