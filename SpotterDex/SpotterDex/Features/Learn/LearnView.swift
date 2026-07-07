@@ -22,9 +22,17 @@ struct LearnView: View {
 
     // MARK: – Stats Banner
 
+    /// Nur Records aktiver Lernmodi – Records entfernter Modi (z. B. das
+    /// frühere Silhouetten-Quiz) oder von neueren App-Versionen gesyncte
+    /// unbekannte Modi dürfen die Statistik nicht verfälschen.
+    private var validRecords: [LearningRecord] {
+        let validModes = Set(LearnMode.allCases.map(\.rawValue))
+        return allRecords.filter { validModes.contains($0.mode) }
+    }
+
     private var statsBanner: some View {
-        let maxStreak    = allRecords.map(\.streak).max() ?? 0
-        let learnedCount = Set(allRecords.filter { $0.totalAttempts > 0 }.map(\.aircraftICAO)).count
+        let maxStreak    = validRecords.map(\.streak).max() ?? 0
+        let learnedCount = Set(validRecords.filter { $0.totalAttempts > 0 }.map(\.aircraftICAO)).count
 
         return HStack(spacing: 0) {
             statCell(value: "\(maxStreak)",       label: "Streak",       icon: "flame.fill",          color: .orange)
@@ -62,7 +70,7 @@ struct LearnView: View {
                 NavigationLink {
                     quizDestination(mode)
                 } label: {
-                    ModeCard(mode: mode, records: allRecords, totalAircraft: allAircraft.count)
+                    ModeCard(mode: mode, records: validRecords, totalAircraft: allAircraft.count)
                 }
                 .buttonStyle(.plain)
             }
@@ -100,7 +108,7 @@ struct LearnView: View {
     }
 
     private var progressItems: [ProgressItem] {
-        let grouped = Dictionary(grouping: allRecords.filter { $0.totalAttempts > 0 },
+        let grouped = Dictionary(grouping: validRecords.filter { $0.totalAttempts > 0 },
                                  by: \.aircraftICAO)
         return grouped.compactMap { icao, recs in
             guard let aircraft = allAircraft.first(where: { $0.icaoCode == icao }) else { return nil }
@@ -144,7 +152,7 @@ private struct ModeCard: View {
                 .foregroundStyle(.tint)
                 .frame(width: 36)
             VStack(alignment: .leading, spacing: 2) {
-                Text(mode.rawValue)
+                Text(mode.displayName)
                     .font(.headline)
                     .foregroundStyle(.primary)
                 Text(mode.description)
@@ -167,7 +175,7 @@ private struct ModeCard: View {
         .padding()
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(mode.rawValue): \(mode.description). \(dueCount) fällig.")
+        .accessibilityLabel("\(mode.displayName): \(mode.description). \(dueCount) fällig.")
     }
 }
 

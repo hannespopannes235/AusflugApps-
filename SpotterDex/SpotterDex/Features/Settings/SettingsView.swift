@@ -53,7 +53,7 @@ struct SettingsView: View {
         } header: {
             Text("Synchronisation")
         } footer: {
-            Text("Favoriten und Lernfortschritt werden über iCloud auf deinen Geräten geteilt. Erfordert eine aktive iCloud-Verbindung. Neustart der App erforderlich.")
+            Text("Favoriten und Lernfortschritt werden über iCloud auf deinen Geräten geteilt. Erfordert die iCloud-Capability im App-Target sowie einen angemeldeten iCloud-Account. Wird nach einem Neustart der App aktiv.")
                 .font(.caption)
         }
     }

@@ -21,42 +21,44 @@ enum EngineType: String, Codable, CaseIterable, Sendable {
 
 /// Kern-Domänenentität – repräsentiert einen Flugzeugtyp/eine Variante.
 /// Alle Maße in SI-Einheiten (m, kg, km, km/h).
+/// Alle Attribute haben Defaults → CloudKit-kompatibel (Voraussetzung
+/// für den optionalen iCloud-Sync).
 @Model
 final class Aircraft {
 
     // MARK: – Identifikation
-    var manufacturer: String     // Hersteller, z. B. "Boeing"
-    var family: String           // Familie, z. B. "737"
-    var variant: String          // Variante, z. B. "737-800"
-    var icaoCode: String         // ICAO-Typencode, z. B. "B738"
-    var iataCode: String         // IATA-Code, z. B. "738"
+    var manufacturer: String = ""   // Hersteller, z. B. "Boeing"
+    var family: String = ""         // Familie, z. B. "737"
+    var variant: String = ""        // Variante, z. B. "737-800"
+    var icaoCode: String = ""       // ICAO-Typencode, z. B. "B738"
+    var iataCode: String = ""       // IATA-Code, z. B. "738"
 
     // MARK: – Geschichte
-    var firstFlightDate: Date?   // Erstflug
-    var status: AircraftStatus   // Produktionsstatus
+    var firstFlightDate: Date?      // Erstflug
+    var status: AircraftStatus = .inProduction   // Produktionsstatus
 
     // MARK: – Abmessungen
-    var wingspan: Double         // Spannweite in m
-    var length: Double           // Länge in m
-    var height: Double           // Höhe in m
+    var wingspan: Double = 0        // Spannweite in m
+    var length: Double = 0          // Länge in m
+    var height: Double = 0          // Höhe in m
 
     // MARK: – Leistung
-    var mtow: Double             // Max. Abflugmasse in kg
-    var range: Double            // Reichweite in km
-    var cruiseSpeed: Double      // Reisegeschwindigkeit in km/h
+    var mtow: Double = 0            // Max. Abflugmasse in kg
+    var range: Double = 0           // Reichweite in km
+    var cruiseSpeed: Double = 0     // Reisegeschwindigkeit in km/h
 
     // MARK: – Kapazität & Antrieb
-    var passengerCapacity: Int   // Pax-Kapazität (max. 1-Klasse)
-    var engineType: EngineType   // Triebwerk-Typ
-    var engineCount: Int         // Anzahl Triebwerke
+    var passengerCapacity: Int = 0  // Pax-Kapazität (konfigurationsabhängig; typische Maximalbestuhlung)
+    var engineType: EngineType = .turbofan   // Triebwerk-Typ
+    var engineCount: Int = 2        // Anzahl Triebwerke
 
     // MARK: – Visuelles Erkennungswissen
-    var visualFeatures: [String] // Erkennungsmerkmale (Freitext)
-    var lookalikes: [String]     // Verwechslungspartner (ICAO-Codes)
+    var visualFeatures: [String] = []   // Erkennungsmerkmale (Freitext)
+    var lookalikes: [String] = []       // Verwechslungspartner (ICAO-Codes)
 
     // MARK: – Medien
-    var imageURL: String?        // Asset-Name oder Remote-URL
-    var imageLicense: String?    // Pflichtangabe: Lizenz/Urheber
+    var imageURL: String?           // Asset-Name oder Remote-URL
+    var imageLicense: String?       // Pflichtangabe: Lizenz/Urheber
 
     // MARK: – Nutzerdaten
     var isFavorite: Bool = false

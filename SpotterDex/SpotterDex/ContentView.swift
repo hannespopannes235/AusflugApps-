@@ -30,7 +30,10 @@ struct ContentView: View {
             }
             .tabItem { Label("Einstellungen", systemImage: "gearshape") }
         }
-        .fullScreenCover(isPresented: .constant(!onboardingDone)) {
+        .fullScreenCover(isPresented: Binding(
+            get: { !onboardingDone },
+            set: { isPresented in if !isPresented { onboardingDone = true } }
+        )) {
             OnboardingView {
                 onboardingDone = true
             }

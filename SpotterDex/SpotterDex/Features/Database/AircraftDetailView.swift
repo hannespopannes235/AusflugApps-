@@ -27,7 +27,12 @@ struct AircraftDetailView: View {
         // Credits werden bei jedem Aufruf live von der Commons-API geladen.
         // Bei fehlendem Netz bleibt photoCredit nil → kein Crash, kein falscher Nachweis.
         .task(id: aircraft.icaoCode) {
-            photoCredit = await WikimediaPhotoService.fetchCredit(for: aircraft.icaoCode)
+            let icao   = aircraft.icaoCode
+            let credit = await WikimediaPhotoService.fetchCredit(for: icao)
+            // Guard gegen veraltete Antworten: Ein abgebrochener Alt-Task darf
+            // den Credit der inzwischen angezeigten Maschine nicht überschreiben.
+            guard aircraft.icaoCode == icao, !Task.isCancelled else { return }
+            photoCredit = credit
         }
     }
 

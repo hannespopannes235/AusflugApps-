@@ -14,7 +14,7 @@ import SwiftData
 
 struct SeedService {
     private static let seedVersionKey = "com.spotterdex.seedVersion"
-    static let currentSeedVersion = 2
+    static let currentSeedVersion = 3
 
     static func seedIfNeeded(modelContext: ModelContext) throws {
         let stored = UserDefaults.standard.integer(forKey: seedVersionKey)
@@ -27,20 +27,57 @@ struct SeedService {
 
         let seed = try JSONDecoder().decode(AircraftSeed.self, from: data)
 
-        // Idempotent: nur noch nicht vorhandene Typen (per ICAO-Code) einfügen.
-        // So erzeugt ein Versions-Bump mit neuen Mustern bei bestehenden
-        // Installationen KEINE Duplikate, und Nutzerdaten (z. B. Favoriten)
-        // bleiben unangetastet. Bei Erstinstallation ist die Menge leer → alles wird importiert.
-        let existingCodes = Set(
-            try modelContext.fetch(FetchDescriptor<Aircraft>()).map(\.icaoCode)
+        // Idempotent per ICAO-Code:
+        //   - Neue Typen werden eingefügt.
+        //   - Bestehende Typen werden feldweise AKTUALISIERT, damit
+        //     Datenkorrekturen (z. B. falsche Lookalike-Codes) auch
+        //     Bestandsinstallationen erreichen. Nutzerdaten (isFavorite)
+        //     bleiben dabei unangetastet.
+        let existing = Dictionary(
+            try modelContext.fetch(FetchDescriptor<Aircraft>()).map { ($0.icaoCode, $0) },
+            uniquingKeysWith: { first, _ in first }
         )
-        seed.aircraft
-            .filter { !existingCodes.contains($0.icaoCode) }
-            .map(\.toAircraft)
-            .forEach { modelContext.insert($0) }
+        for dto in seed.aircraft {
+            if let current = existing[dto.icaoCode] {
+                dto.update(current)
+            } else {
+                modelContext.insert(dto.toAircraft)
+            }
+        }
 
         try modelContext.save()
         UserDefaults.standard.set(currentSeedVersion, forKey: seedVersionKey)
+    }
+
+    // MARK: – Datenmigration Lernfortschritt
+
+    private static let learnMigrationKey = "com.spotterdex.learnModeMigration"
+
+    /// Einmalige Migration der `LearningRecord.mode`-Schlüssel:
+    /// Früher wurden UI-Anzeigenamen persistiert ("Foto", "Specs",
+    /// "Verwechslung", "Silhouette"); seit der Umstellung auf stabile
+    /// technische Keys ("photo", "specs", "spotDiff") müssen Alt-Records
+    /// umgemappt werden. Records des entfernten Silhouetten-Quiz werden
+    /// gelöscht, da es den Modus nicht mehr gibt.
+    static func migrateLearningRecordsIfNeeded(modelContext: ModelContext) throws {
+        guard UserDefaults.standard.integer(forKey: learnMigrationKey) < 1 else { return }
+
+        let legacyMap = [
+            "Foto":         "photo",
+            "Specs":        "specs",
+            "Verwechslung": "spotDiff",
+        ]
+        let records = try modelContext.fetch(FetchDescriptor<LearningRecord>())
+        for record in records {
+            if let newKey = legacyMap[record.mode] {
+                record.mode = newKey
+            } else if record.mode == "Silhouette" {
+                modelContext.delete(record)
+            }
+        }
+
+        try modelContext.save()
+        UserDefaults.standard.set(1, forKey: learnMigrationKey)
     }
 }
 
@@ -71,6 +108,31 @@ private struct AircraftDTO: Decodable {
     let visualFeatures: [String]
     let lookalikes: [String]
     let imageCredits: String?
+
+    /// Überträgt alle kuratierten Felder auf einen bestehenden Datensatz.
+    /// Nutzerfelder (isFavorite) werden bewusst NICHT angefasst.
+    func update(_ aircraft: Aircraft) {
+        aircraft.manufacturer      = manufacturer
+        aircraft.family            = family
+        aircraft.variant           = variant
+        aircraft.iataCode          = iataCode
+        aircraft.firstFlightDate   = firstFlightYear.flatMap {
+            Calendar.current.date(from: DateComponents(year: $0, month: 1, day: 1))
+        }
+        aircraft.status            = statusMap[status] ?? .inProduction
+        aircraft.wingspan          = wingspan
+        aircraft.length            = length
+        aircraft.height            = height
+        aircraft.mtow              = mtow
+        aircraft.range             = range
+        aircraft.cruiseSpeed       = cruiseSpeed
+        aircraft.passengerCapacity = passengerCapacity
+        aircraft.engineType        = engineTypeMap[engineType] ?? .turbofan
+        aircraft.engineCount       = engineCount
+        aircraft.visualFeatures    = visualFeatures
+        aircraft.lookalikes        = lookalikes
+        aircraft.imageLicense      = imageCredits
+    }
 
     var toAircraft: Aircraft {
         Aircraft(

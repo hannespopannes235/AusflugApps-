@@ -3,14 +3,6 @@ import XCTest
 
 final class SpotterDexTests: XCTestCase {
 
-    func testPlaceholderAlwaysPasses() throws {
-        XCTAssertTrue(true, "Test-Gerüst ist einsatzbereit.")
-    }
-
-    func testStringConcatenation() throws {
-        XCTAssertEqual("Spotter" + "Dex", "SpotterDex")
-    }
-
     // MARK: – Aircraft-Modell (Phase 1)
 
     func testAircraftDefaultValues() throws {
@@ -42,11 +34,22 @@ final class SpotterDexTests: XCTestCase {
 
     // MARK: – AircraftEra (Phase 2)
 
-    func testAircraftEraComputed() throws {
-        let jet = Aircraft(manufacturer: "Airbus", family: "A320", variant: "A320neo",
-                           icaoCode: "A20N", iataCode: "32N")
-        // firstFlight default is nil → era is determined by status/type; just check non-crash
-        let _ = AircraftEra.era(for: jet)
+    func testAircraftEraMatches() throws {
+        func date(year: Int) -> Date {
+            Calendar.current.date(from: DateComponents(year: year, month: 6, day: 1))!
+        }
+        XCTAssertTrue(AircraftEra.classic.matches(date(year: 1969)))
+        XCTAssertTrue(AircraftEra.eighties.matches(date(year: 1986)))
+        XCTAssertTrue(AircraftEra.nineties.matches(date(year: 1998)))
+        XCTAssertTrue(AircraftEra.modern.matches(date(year: 2005)))
+        XCTAssertTrue(AircraftEra.newGen.matches(date(year: 2016)))
+        // Grenzen: 1980 gehört zu den Achtzigern, nicht zu den Klassikern
+        XCTAssertFalse(AircraftEra.classic.matches(date(year: 1980)))
+        XCTAssertTrue(AircraftEra.eighties.matches(date(year: 1980)))
+        // Ohne Erstflugdatum passt keine Ära
+        for era in AircraftEra.allCases {
+            XCTAssertFalse(era.matches(nil))
+        }
     }
 
     // MARK: – ClassificationResult (Phase 5 / 6)
@@ -91,7 +94,7 @@ final class SpotterDexTests: XCTestCase {
     // MARK: – SM-2 Spaced Repetition (Phase 4)
 
     func testSM2FirstCorrectAnswer() throws {
-        let rec = LearningRecord(aircraftICAO: "A20N", mode: "silhouette")
+        let rec = LearningRecord(aircraftICAO: "A20N", mode: "photo")
         rec.recordAnswer(correct: true)
         XCTAssertEqual(rec.repetitions, 1)
         XCTAssertEqual(rec.interval, 1)
@@ -101,7 +104,7 @@ final class SpotterDexTests: XCTestCase {
     }
 
     func testSM2SecondCorrectAnswer() throws {
-        let rec = LearningRecord(aircraftICAO: "A20N", mode: "silhouette")
+        let rec = LearningRecord(aircraftICAO: "A20N", mode: "photo")
         rec.recordAnswer(correct: true)
         rec.recordAnswer(correct: true)
         XCTAssertEqual(rec.repetitions, 2)
@@ -110,7 +113,7 @@ final class SpotterDexTests: XCTestCase {
     }
 
     func testSM2WrongAnswerResetsStreak() throws {
-        let rec = LearningRecord(aircraftICAO: "A20N", mode: "silhouette")
+        let rec = LearningRecord(aircraftICAO: "A20N", mode: "photo")
         rec.recordAnswer(correct: true)
         rec.recordAnswer(correct: true)
         rec.recordAnswer(correct: false)
@@ -134,14 +137,14 @@ final class SpotterDexTests: XCTestCase {
     }
 
     func testSM2EaseFactorFloor() throws {
-        let rec = LearningRecord(aircraftICAO: "A20N", mode: "silhouette")
+        let rec = LearningRecord(aircraftICAO: "A20N", mode: "photo")
         // Repeatedly answer wrong to drive EF toward floor
         for _ in 0..<20 { rec.recordAnswer(correct: false) }
         XCTAssertGreaterThanOrEqual(rec.easeFactor, 1.3)
     }
 
     func testSM2IsDue() throws {
-        let rec = LearningRecord(aircraftICAO: "A20N", mode: "silhouette")
+        let rec = LearningRecord(aircraftICAO: "A20N", mode: "photo")
         // Fresh record: nextReview = .now → isDue
         XCTAssertTrue(rec.isDue)
     }

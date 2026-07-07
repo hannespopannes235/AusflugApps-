@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "notice": "Kuratiert aus: Wikidata (CC0), Jane's All the World's Aircraft, Herstellerdatenblättern (öffentlich). Maße in SI (m / kg / km / km·h⁻¹). Bildrechte: Platzhaltertext – je Bild Einzelnachweis erforderlich. Kein kommerzieller Weiterverkauf.",
   "aircraft": [
     {
@@ -26,7 +26,7 @@
         "Pratt & Whitney GTF-Triebwerke mit breitem Einlass",
         "Hochgelegte Flügel, leicht gepfeilt, keine sichtbare Wingbox-Verdickung"
       ],
-      "lookalikes": ["E295", "A319neo"],
+      "lookalikes": ["E295", "A19N", "E190"],
       "imageCredits": "Platzhalter – Lizenz: CC BY-SA / Wikimedia Commons (Einzelnachweis je Bild erforderlich)"
     },
     {
@@ -52,7 +52,7 @@
         "Klassische Airbus-Nase mit abgeflachter Unterseite",
         "Keine Triebwerksabflachung unten (Gegensatz zu B737 NG)"
       ],
-      "lookalikes": ["B738", "A319neo", "A321neo"],
+      "lookalikes": ["B738", "A19N", "A21N"],
       "imageCredits": "Platzhalter – Lizenz: CC BY-SA / Wikimedia Commons (Einzelnachweis je Bild erforderlich)"
     },
     {
@@ -79,7 +79,7 @@
         "Rolls-Royce Trent XWB – charakteristische ovale Gondeln",
         "Schlanker Rumpf trotz Widebody-Kategorie"
       ],
-      "lookalikes": ["B789", "A330neo"],
+      "lookalikes": ["B789", "A339"],
       "imageCredits": "Platzhalter – Lizenz: CC BY-SA / Wikimedia Commons (Einzelnachweis je Bild erforderlich)"
     },
     {
@@ -116,7 +116,7 @@
       "icaoCode": "B738",
       "iataCode": "738",
       "firstFlightYear": 1998,
-      "status": "inProduction",
+      "status": "outOfProduction",
       "wingspan": 35.79,
       "length": 39.47,
       "height": 12.55,
@@ -133,7 +133,7 @@
         "Split-Scimitar-Winglets optional – kein Standard wie bei neo-Airbus",
         "Sehr niedrige Bodenfreiheit der Triebwerke"
       ],
-      "lookalikes": ["A20N", "B737 MAX 8"],
+      "lookalikes": ["A20N", "B38M"],
       "imageCredits": "Platzhalter – Lizenz: CC BY-SA / Wikimedia Commons (Einzelnachweis je Bild erforderlich)"
     },
     {
@@ -160,7 +160,7 @@
         "Raketenförmige, zylindrische Gondeln ohne sichtbare Nachlaufkante",
         "Breitester Rumpf aller noch produzierten Zweistrahler-Langstreckenflugzeuge"
       ],
-      "lookalikes": ["B77X", "B789"],
+      "lookalikes": ["B779", "B789"],
       "imageCredits": "Platzhalter – Lizenz: CC BY-SA / Wikimedia Commons (Einzelnachweis je Bild erforderlich)"
     },
     {
@@ -187,7 +187,7 @@
         "Größere, ovale Kabinenfenster als bei Aluminium-Rümpfen",
         "GEnx oder Trent 1000 – sehr breite Gondeln mit 'Sägezahn'-Austritt"
       ],
-      "lookalikes": ["A359", "A330neo"],
+      "lookalikes": ["A359", "A339"],
       "imageCredits": "Platzhalter – Lizenz: CC BY-SA / Wikimedia Commons (Einzelnachweis je Bild erforderlich)"
     },
     {
@@ -203,7 +203,7 @@
       "height": 19.35,
       "mtow": 447696,
       "range": 14815,
-      "cruiseSpeed": 988,
+      "cruiseSpeed": 908,
       "passengerCapacity": 467,
       "engineType": "turbofan",
       "engineCount": 4,
@@ -268,7 +268,7 @@
         "Sehr kleiner, kurzer Rumpf mit niedrigem Boden (kein Airbridge nötig)",
         "Hecktreppe extern sichtbar – typisches Regional-Merkmal"
       ],
-      "lookalikes": ["DH8D", "AT42"],
+      "lookalikes": ["DH8D", "AT45"],
       "imageCredits": "Platzhalter – Lizenz: CC BY-SA / Wikimedia Commons (Einzelnachweis je Bild erforderlich)"
     },
     {

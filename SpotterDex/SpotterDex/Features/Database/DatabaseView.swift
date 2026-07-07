@@ -22,10 +22,12 @@ struct DatabaseView: View {
     var body: some View {
         Group {
             if allAircraft.isEmpty {
+                // Der Seed läuft synchron vor UI-Aufbau – eine leere DB ist
+                // also ein echter Fehlerzustand, kein Ladevorgang.
                 ContentUnavailableView(
-                    "Datenbank wird geladen…",
+                    "Keine Flugzeugdaten",
                     systemImage: "airplane.slash",
-                    description: Text("Bitte einen Moment warten.")
+                    description: Text("Die Datenbank konnte nicht geladen werden. Bitte App neu installieren.")
                 )
             } else if filtered.isEmpty {
                 ContentUnavailableView.search(text: viewModel.searchText)

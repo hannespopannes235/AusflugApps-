@@ -4,12 +4,23 @@ import Observation
 
 // MARK: – Lernmodus
 
+/// Die rawValues sind STABILE technische Schlüssel und werden in
+/// `LearningRecord.mode` persistiert – niemals ändern oder lokalisieren.
+/// Anzeige-Texte kommen aus `displayName`.
 enum LearnMode: String, CaseIterable, Identifiable {
-    case photo    = "Foto"
-    case specs    = "Specs"
-    case spotDiff = "Verwechslung"
+    case photo    = "photo"
+    case specs    = "specs"
+    case spotDiff = "spotDiff"
 
     var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .photo:    "Foto"
+        case .specs:    "Specs"
+        case .spotDiff: "Verwechslung"
+        }
+    }
 
     var systemImage: String {
         switch self {
@@ -59,8 +70,12 @@ final class LearnViewModel {
     ) -> Aircraft? {
         guard !aircraft.isEmpty else { return nil }
         let modeKey = mode.rawValue
-        let recordMap = Dictionary(uniqueKeysWithValues:
-            records.filter { $0.mode == modeKey }.map { ($0.aircraftICAO, $0) }
+        // uniquingKeysWith statt uniqueKeysWithValues: doppelte Records pro
+        // (ICAO, Modus) sind möglich (z. B. nach CloudKit-Sync) und dürfen
+        // nicht crashen – der ältere Record gewinnt.
+        let recordMap = Dictionary(
+            records.filter { $0.mode == modeKey }.map { ($0.aircraftICAO, $0) },
+            uniquingKeysWith: { first, _ in first }
         )
 
         let due = aircraft.filter { recordMap[$0.icaoCode]?.isDue ?? true }

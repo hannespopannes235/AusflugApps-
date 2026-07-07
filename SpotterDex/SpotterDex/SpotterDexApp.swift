@@ -7,11 +7,26 @@ struct SpotterDexApp: App {
 
     init() {
         do {
-            // Für iCloud-Sync: ModelConfiguration(cloudKitDatabase: .automatic) +
-            // iCloud-Capability im Xcode-Target aktivieren.
-            container = try ModelContainer(for: Aircraft.self, LearningRecord.self)
-            // Seed beim ersten Start – synchron auf mainContext, vor UI-Aufbau.
+            // iCloud-Sync laut Settings-Toggle. CloudKit setzt die iCloud-
+            // Capability im Xcode-Target voraus – fehlt sie (oder ist kein
+            // Account angemeldet), schlägt die Container-Erstellung fehl und
+            // wir fallen sauber auf den lokalen Store zurück.
+            let wantsCloud = UserDefaults.standard.bool(forKey: "com.spotterdex.iCloudSync")
+            if wantsCloud,
+               let cloudContainer = try? ModelContainer(
+                   for: Aircraft.self, LearningRecord.self,
+                   configurations: ModelConfiguration(cloudKitDatabase: .automatic)
+               ) {
+                container = cloudContainer
+            } else {
+                container = try ModelContainer(
+                    for: Aircraft.self, LearningRecord.self,
+                    configurations: ModelConfiguration(cloudKitDatabase: .none)
+                )
+            }
+            // Seed & Migration beim Start – synchron auf mainContext, vor UI-Aufbau.
             try SeedService.seedIfNeeded(modelContext: container.mainContext)
+            try SeedService.migrateLearningRecordsIfNeeded(modelContext: container.mainContext)
         } catch {
             fatalError("SwiftData-Fehler beim Start: \(error)")
         }
