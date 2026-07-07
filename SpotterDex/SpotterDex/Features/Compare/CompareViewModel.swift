@@ -17,11 +17,4 @@ final class CompareViewModel {
         guard selectedAircraft.indices.contains(index) else { return }
         selectedAircraft.remove(at: index)
     }
-
-    /// True wenn sich der Wert am gegebenen KeyPath zwischen den gewählten Typen unterscheidet.
-    func isDifferent<T: Equatable>(_ keyPath: KeyPath<Aircraft, T>) -> Bool {
-        guard selectedAircraft.count > 1 else { return false }
-        let first = selectedAircraft[0][keyPath: keyPath]
-        return selectedAircraft.dropFirst().contains { $0[keyPath: keyPath] != first }
-    }
 }

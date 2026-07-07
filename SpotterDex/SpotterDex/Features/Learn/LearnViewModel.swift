@@ -39,6 +39,24 @@ enum LearnMode: String, CaseIterable, Identifiable {
     }
 }
 
+// MARK: – Spec-Extraktoren (geteilt von Specs-Quiz und Verwechslungs-Quiz)
+
+enum QuizSpec {
+    /// Basis-Kennzahlen, an denen sich Typen unterscheiden lassen.
+    static let base: [(label: String, value: (Aircraft) -> String)] = [
+        ("Spannweite", { $0.wingspan.formatted(.number.precision(.fractionLength(1))) + " m" }),
+        ("Länge",      { $0.length.formatted(.number.precision(.fractionLength(1))) + " m" }),
+        ("Reichweite", { Int($0.range).formatted() + " km" }),
+        ("MTOW",       { (Int($0.mtow / 1_000)).formatted() + " t" }),
+        ("Passagiere", { $0.passengerCapacity.formatted() + " Pax" }),
+    ]
+
+    /// Erweiterter Satz fürs Specs-Quiz.
+    static let extended = base + [
+        ("Triebwerke", { (a: Aircraft) in "\(a.engineCount)× \(a.engineType.rawValue)" }),
+    ]
+}
+
 // MARK: – ViewModel
 
 @Observable
@@ -85,6 +103,20 @@ final class LearnViewModel {
             }
         }
         return aircraft.randomElement()
+    }
+
+    /// 4 Antwortoptionen: Ziel + bis zu 3 Distraktoren, Lookalikes bevorzugt
+    /// (didaktisch wertvoller als reine Zufalls-Distraktoren).
+    /// Zuvor wortgleich in PhotoQuizView und SpecsQuizView dupliziert.
+    func buildChoices(for target: Aircraft, from aircraft: [Aircraft]) -> [Aircraft] {
+        let lookalikes = target.lookalikes
+            .compactMap { icao in aircraft.first { $0.icaoCode == icao } }
+            .shuffled()
+        let others = aircraft
+            .filter { $0.icaoCode != target.icaoCode && !target.lookalikes.contains($0.icaoCode) }
+            .shuffled()
+        let distractors = Array((lookalikes + others).prefix(3))
+        return ([target] + distractors).shuffled()
     }
 
     /// Sucht einen vorhandenen LearningRecord oder legt einen neuen an.

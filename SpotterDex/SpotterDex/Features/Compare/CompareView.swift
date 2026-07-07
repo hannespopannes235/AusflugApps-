@@ -52,14 +52,19 @@ struct CompareView: View {
 
     private func slotCard(_ aircraft: Aircraft, index: Int) -> some View {
         VStack(spacing: 4) {
-            Text(aircraft.icaoCode)
-                .font(.caption.monospaced())
-                .foregroundStyle(slotColors[index % slotColors.count])
-            Text(aircraft.variant)
-                .font(.caption2)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.primary)
+            // Nur die Texte kombinieren – ein .combine über die ganze Karte
+            // würde den Entfernen-Button für VoiceOver unerreichbar machen.
+            VStack(spacing: 4) {
+                Text(aircraft.icaoCode)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(slotColors[index % slotColors.count])
+                Text(aircraft.variant)
+                    .font(.caption2)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.primary)
+            }
+            .accessibilityElement(children: .combine)
             Button {
                 viewModel.removeAircraft(at: index)
             } label: {
@@ -73,7 +78,6 @@ struct CompareView: View {
         .padding(8)
         .frame(maxWidth: .infinity)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
-        .accessibilityElement(children: .combine)
     }
 
     private var addSlotButton: some View {

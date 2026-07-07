@@ -27,7 +27,7 @@ struct PhotoQuizView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            sessionBar
+            QuizSessionBar(viewModel: viewModel)
             Divider()
             if let target {
                 ScrollView {
@@ -49,27 +49,6 @@ struct PhotoQuizView: View {
         .navigationTitle("Foto")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { nextQuestion() }
-    }
-
-    // MARK: – Session Bar
-
-    private var sessionBar: some View {
-        HStack {
-            Label("\(viewModel.sessionStreak)", systemImage: "flame.fill")
-                .font(.subheadline.bold())
-                .foregroundStyle(.orange)
-            Spacer()
-            Text("\(viewModel.sessionCorrect) / \(viewModel.sessionTotal) korrekt")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(
-            "Streak \(viewModel.sessionStreak), " +
-            "\(viewModel.sessionCorrect) von \(viewModel.sessionTotal) korrekt"
-        )
     }
 
     // MARK: – Foto-Karte (mit Silhouetten-Fallback offline)
@@ -159,25 +138,11 @@ struct PhotoQuizView: View {
     // MARK: – Ergebnis
 
     private func resultBanner(_ target: Aircraft) -> some View {
-        let correct = selected?.icaoCode == target.icaoCode
-        return VStack(spacing: 8) {
-            Label(
-                correct ? "Richtig!" : "Falsch – es war \(target.variant)",
-                systemImage: correct ? "checkmark.circle.fill" : "xmark.circle.fill"
-            )
-            .font(.headline)
-            .foregroundStyle(correct ? .green : .red)
-            Text("\(target.manufacturer) \(target.family)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Button("Nächste Frage") { nextQuestion() }
-                .buttonStyle(.borderedProminent)
-                .padding(.top, 4)
-        }
-        .padding()
-        .frame(maxWidth: .infinity)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
-        .accessibilityElement(children: .combine)
+        QuizResultBanner(
+            correct:   selected?.icaoCode == target.icaoCode,
+            wrongText: "Falsch – es war \(target.variant)",
+            detail:    "\(target.manufacturer) \(target.family)"
+        ) { nextQuestion() }
     }
 
     // MARK: – Logik
@@ -199,25 +164,12 @@ struct PhotoQuizView: View {
         let t = viewModel.pickAircraft(from: aircraft, records: allRecords, mode: mode)
         target  = t
         guard let t else { return }
-        choices = buildChoices(for: t)
+        choices = viewModel.buildChoices(for: t, from: aircraft)
 
         // Bildnachweis live laden (kein hartcodierter Credit).
         Task {
             let c = await WikimediaPhotoService.fetchCredit(for: t.icaoCode)
             await MainActor.run { if target?.icaoCode == t.icaoCode { credit = c } }
         }
-    }
-
-    /// Bevorzugt Lookalikes als Distraktoren – beim Foto-Quiz sind diese echten
-    /// Verwechslungspartner tatsächlich unterscheidbar (anders als in der Silhouette).
-    private func buildChoices(for target: Aircraft) -> [Aircraft] {
-        let lookalikes = target.lookalikes
-            .compactMap { icao in aircraft.first { $0.icaoCode == icao } }
-            .shuffled()
-        let others = aircraft
-            .filter { $0.icaoCode != target.icaoCode && !target.lookalikes.contains($0.icaoCode) }
-            .shuffled()
-        let distractors = Array((lookalikes + others).prefix(3))
-        return ([target] + distractors).shuffled()
     }
 }

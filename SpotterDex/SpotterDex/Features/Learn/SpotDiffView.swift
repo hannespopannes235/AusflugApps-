@@ -24,17 +24,9 @@ struct SpotDiffView: View {
         let correctAnswer: String
     }
 
-    private let specExtractors: [(String, (Aircraft) -> String)] = [
-        ("Spannweite", { $0.wingspan.formatted(.number.precision(.fractionLength(1))) + " m" }),
-        ("Länge",      { $0.length.formatted(.number.precision(.fractionLength(1))) + " m" }),
-        ("Reichweite", { Int($0.range).formatted() + " km" }),
-        ("MTOW",       { (Int($0.mtow / 1_000)).formatted() + " t" }),
-        ("Passagiere", { $0.passengerCapacity.formatted() + " Pax" }),
-    ]
-
     var body: some View {
         VStack(spacing: 0) {
-            sessionBar
+            QuizSessionBar(viewModel: viewModel)
             Divider()
             if let a = aircraftA, let b = aircraftB, let q = question {
                 ScrollView {
@@ -57,27 +49,6 @@ struct SpotDiffView: View {
         .navigationTitle("Verwechslung")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { nextQuestion() }
-    }
-
-    // MARK: – Session Bar
-
-    private var sessionBar: some View {
-        HStack {
-            Label("\(viewModel.sessionStreak)", systemImage: "flame.fill")
-                .font(.subheadline.bold())
-                .foregroundStyle(.orange)
-            Spacer()
-            Text("\(viewModel.sessionCorrect) / \(viewModel.sessionTotal) korrekt")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(
-            "Streak \(viewModel.sessionStreak), " +
-            "\(viewModel.sessionCorrect) von \(viewModel.sessionTotal) korrekt"
-        )
     }
 
     // MARK: – Silhouetten-Paar
@@ -153,22 +124,10 @@ struct SpotDiffView: View {
     // MARK: – Ergebnis
 
     private func resultBanner(_ a: Aircraft, _ q: DiffQuestion) -> some View {
-        let correct = selected == q.correctAnswer
-        return VStack(spacing: 8) {
-            Label(
-                correct ? "Richtig!" : "Falsch – korrekt: \(q.correctAnswer)",
-                systemImage: correct ? "checkmark.circle.fill" : "xmark.circle.fill"
-            )
-            .font(.headline)
-            .foregroundStyle(correct ? .green : .red)
-            Button("Nächste Frage") { nextQuestion() }
-                .buttonStyle(.borderedProminent)
-                .padding(.top, 4)
-        }
-        .padding()
-        .frame(maxWidth: .infinity)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
-        .accessibilityElement(children: .combine)
+        QuizResultBanner(
+            correct:   selected == q.correctAnswer,
+            wrongText: "Falsch – korrekt: \(q.correctAnswer)"
+        ) { nextQuestion() }
     }
 
     // MARK: – Logik
@@ -188,35 +147,40 @@ struct SpotDiffView: View {
         selected   = nil
         showResult = false
 
-        // Kandidaten: Typen mit mindestens einem Lookalike in der DB
-        let candidates = aircraft.filter { a in
-            a.lookalikes.contains { icao in aircraft.contains { $0.icaoCode == icao } }
+        // Kandidaten: Typen mit mindestens einem UNTERSCHEIDBAREN Lookalike in
+        // der DB. Partner, die in allen Spec-Werten identisch sind, würden eine
+        // degenerierte Frage erzeugen (nur eine Antwortoption, automatisch
+        // "richtig") und werden deshalb schon hier ausgeschlossen.
+        func distinguishablePartners(of a: Aircraft) -> [Aircraft] {
+            a.lookalikes
+                .compactMap { icao in aircraft.first { $0.icaoCode == icao } }
+                .filter { partner in QuizSpec.base.contains { $0.value(a) != $0.value(partner) } }
         }
+        let candidates = aircraft.filter { !distinguishablePartners(of: $0).isEmpty }
         guard !candidates.isEmpty else { aircraftA = nil; aircraftB = nil; question = nil; return }
 
         guard let a = viewModel.pickAircraft(from: candidates, records: allRecords, mode: mode),
-              let b = a.lookalikes
-                        .compactMap({ icao in aircraft.first { $0.icaoCode == icao } })
-                        .randomElement()
+              let b = distinguishablePartners(of: a).randomElement()
         else { aircraftA = nil; aircraftB = nil; question = nil; return }
 
         aircraftA = a
         aircraftB = b
 
-        // Spec wählen, bei dem A und B sich unterscheiden (bevorzugt)
-        let diffSpecs = specExtractors.filter { _, ext in ext(a) != ext(b) }
-        let chosen    = (diffSpecs.isEmpty ? specExtractors : diffSpecs).randomElement()!
-        let correctVal = chosen.1(a)
-        let wrongVal   = chosen.1(b)
+        // Spec wählen, bei dem sich A und B unterscheiden (durch die
+        // Kandidaten-Filterung oben garantiert nicht leer).
+        let diffSpecs = QuizSpec.base.filter { $0.value(a) != $0.value(b) }
+        guard let chosen = diffSpecs.randomElement() else { return }
+        let correctVal = chosen.value(a)
+        let wrongVal   = chosen.value(b)
 
         // Bis zu 2 weitere Ablenkungswerte aus dem restlichen Pool
         let extra = aircraft
             .filter { $0.icaoCode != a.icaoCode && $0.icaoCode != b.icaoCode }
-            .compactMap { chosen.1($0) }
+            .map { chosen.value($0) }
             .filter { $0 != correctVal && $0 != wrongVal }
         let extraUnique = Array(Set(extra)).shuffled().prefix(2)
 
-        choices  = Array(Set([correctVal, wrongVal] + extraUnique)).shuffled()
-        question = DiffQuestion(label: chosen.0, correctAnswer: correctVal)
+        choices  = ([correctVal, wrongVal] + extraUnique).shuffled()
+        question = DiffQuestion(label: chosen.label, correctAnswer: correctVal)
     }
 }

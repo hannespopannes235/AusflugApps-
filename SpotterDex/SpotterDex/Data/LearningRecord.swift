@@ -30,7 +30,11 @@ final class LearningRecord {
         if correct {
             totalCorrect += 1
             streak += 1
-            let quality = 4.0
+            // Qualität aus der Serie ableiten: Karten, die sicher sitzen
+            // (Streak ≥ 3), bekommen q=5 → EaseFactor wächst und die
+            // Intervalle dehnen sich schneller. Mit fixem q=4 wäre das
+            // EF-Delta exakt 0 und die Formel wirkungslos.
+            let quality = streak >= 3 ? 5.0 : 4.0
             easeFactor = max(1.3, easeFactor + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
             switch repetitions {
             case 0:  interval = 1

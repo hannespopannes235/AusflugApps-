@@ -149,6 +149,148 @@ final class SpotterDexTests: XCTestCase {
         XCTAssertTrue(rec.isDue)
     }
 
+    func testSM2EaseFactorGrowsWithStreak() throws {
+        // Ab Streak ≥ 3 gilt Qualität 5 → EaseFactor wächst über den Startwert.
+        let rec = LearningRecord(aircraftICAO: "A20N", mode: "photo")
+        XCTAssertEqual(rec.easeFactor, 2.5, accuracy: 0.001)
+        for _ in 0..<5 { rec.recordAnswer(correct: true) }
+        XCTAssertGreaterThan(rec.easeFactor, 2.5)
+    }
+
+    // MARK: – Seed-Datenqualität (Phase E)
+    // Diese Tests hätten die Lookalike-Datenfehler gefangen, die in Phase A
+    // manuell korrigiert wurden (Klarnamen statt ICAO-Codes im Seed).
+
+    private func loadSeedAircraft() throws -> [[String: Any]] {
+        let bundle = Bundle(for: LearningRecord.self)   // App-Bundle, nicht Test-Bundle
+        let url = try XCTUnwrap(bundle.url(forResource: "aircraft_seed_v1", withExtension: "json"),
+                                "aircraft_seed_v1.json fehlt im App-Bundle")
+        let json = try XCTUnwrap(
+            try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any]
+        )
+        return try XCTUnwrap(json["aircraft"] as? [[String: Any]])
+    }
+
+    func testSeedHasExpectedTypeCount() throws {
+        XCTAssertEqual(try loadSeedAircraft().count, 18)
+    }
+
+    func testSeedICAOCodesAreUnique() throws {
+        let codes = try loadSeedAircraft().compactMap { $0["icaoCode"] as? String }
+        XCTAssertEqual(codes.count, Set(codes).count, "Doppelte ICAO-Codes im Seed")
+    }
+
+    func testSeedLookalikesAreValidICAOCodes() throws {
+        // Lookalikes müssen ICAO-Typencodes sein (3–4 Zeichen, Großbuchstaben/
+        // Ziffern) – keine Klarnamen wie "A321neo" oder "B737 MAX 8".
+        for entry in try loadSeedAircraft() {
+            let icao = entry["icaoCode"] as? String ?? "?"
+            for lookalike in entry["lookalikes"] as? [String] ?? [] {
+                XCTAssertTrue(
+                    (3...4).contains(lookalike.count)
+                        && lookalike.allSatisfy { $0.isUppercase || $0.isNumber },
+                    "\(icao): Lookalike '\(lookalike)' ist kein ICAO-Code"
+                )
+                XCTAssertNotEqual(lookalike, icao, "\(icao) listet sich selbst als Lookalike")
+            }
+        }
+    }
+
+    func testSeedEveryTypeHasWikimediaPhoto() throws {
+        for entry in try loadSeedAircraft() {
+            let icao = try XCTUnwrap(entry["icaoCode"] as? String)
+            XCTAssertNotNil(WikimediaPhotoService.imageURL(for: icao),
+                            "\(icao) hat kein Commons-Foto-Mapping")
+        }
+    }
+
+    // MARK: – LearnViewModel (Phase E)
+
+    func testBuildChoicesReturnsFourUniqueIncludingTarget() throws {
+        let fleet = (0..<8).map { i in
+            Aircraft(manufacturer: "M", family: "F", variant: "V\(i)", icaoCode: "T\(i)0\(i)")
+        }
+        let target = fleet[0]
+        let choices = LearnViewModel().buildChoices(for: target, from: fleet)
+        XCTAssertEqual(choices.count, 4)
+        XCTAssertEqual(Set(choices.map(\.icaoCode)).count, 4, "Optionen müssen eindeutig sein")
+        XCTAssertTrue(choices.contains { $0.icaoCode == target.icaoCode })
+    }
+
+    func testBuildChoicesPrefersLookalikes() throws {
+        let target = Aircraft(manufacturer: "Airbus", family: "A320", variant: "A320neo",
+                              icaoCode: "A20N", lookalikes: ["B738", "A21N", "B38M"])
+        let fleet = [target] + ["B738", "A21N", "B38M", "A388", "AT76"].map {
+            Aircraft(manufacturer: "M", family: "F", variant: $0, icaoCode: $0)
+        }
+        let choices = LearnViewModel().buildChoices(for: target, from: fleet)
+        // Alle 3 Distraktoren müssen aus den Lookalikes stammen
+        let distractors = Set(choices.map(\.icaoCode)).subtracting(["A20N"])
+        XCTAssertTrue(distractors.isSubset(of: ["B738", "A21N", "B38M"]))
+    }
+
+    func testPickAircraftPrefersUnseenAndDue() throws {
+        let vm = LearnViewModel()
+        let a = Aircraft(manufacturer: "M", family: "F", variant: "A", icaoCode: "AAAA")
+        let b = Aircraft(manufacturer: "M", family: "F", variant: "B", icaoCode: "BBBB")
+        // A wurde gerade richtig beantwortet (nextReview in der Zukunft),
+        // B ist ungesehen → B muss gewählt werden.
+        let recA = LearningRecord(aircraftICAO: "AAAA", mode: "photo")
+        recA.recordAnswer(correct: true)
+        let picked = vm.pickAircraft(from: [a, b], records: [recA], mode: .photo)
+        XCTAssertEqual(picked?.icaoCode, "BBBB")
+    }
+
+    func testPickAircraftSurvivesDuplicateRecords() throws {
+        // Doppelte (ICAO, Modus)-Records (z. B. nach CloudKit-Sync) dürfen
+        // nicht crashen (früher: Dictionary(uniqueKeysWithValues:)-Trap).
+        let vm = LearnViewModel()
+        let a = Aircraft(manufacturer: "M", family: "F", variant: "A", icaoCode: "AAAA")
+        let dup1 = LearningRecord(aircraftICAO: "AAAA", mode: "photo")
+        let dup2 = LearningRecord(aircraftICAO: "AAAA", mode: "photo")
+        XCTAssertNotNil(vm.pickAircraft(from: [a], records: [dup1, dup2], mode: .photo))
+    }
+
+    // MARK: – DatabaseViewModel (Phase E)
+
+    private func makeFilterFixture() -> (DatabaseViewModel, Aircraft) {
+        let vm = DatabaseViewModel()
+        let a320 = Aircraft(manufacturer: "Airbus", family: "A320", variant: "A320neo",
+                            icaoCode: "A20N", iataCode: "32N", status: .inProduction)
+        return (vm, a320)
+    }
+
+    func testIsMatchingSearchByICAOAndVariant() throws {
+        let (vm, a320) = makeFilterFixture()
+        vm.searchText = "a20n"
+        XCTAssertTrue(vm.isMatching(a320))
+        vm.searchText = "320NEO"
+        XCTAssertTrue(vm.isMatching(a320))
+        vm.searchText = "Boeing"
+        XCTAssertFalse(vm.isMatching(a320))
+    }
+
+    func testIsMatchingManufacturerAndStatusFilter() throws {
+        let (vm, a320) = makeFilterFixture()
+        vm.selectedManufacturers = ["Boeing"]
+        XCTAssertFalse(vm.isMatching(a320))
+        vm.selectedManufacturers = ["Airbus"]
+        XCTAssertTrue(vm.isMatching(a320))
+        vm.selectedStatuses = [.retired]
+        XCTAssertFalse(vm.isMatching(a320))
+    }
+
+    func testIsMatchingFavoritesOnly() throws {
+        let (vm, a320) = makeFilterFixture()
+        vm.favoritesOnly = true
+        XCTAssertFalse(vm.isMatching(a320))
+        a320.isFavorite = true
+        XCTAssertTrue(vm.isMatching(a320))
+        XCTAssertTrue(vm.hasActiveFilters)
+        vm.clearFilters()
+        XCTAssertFalse(vm.favoritesOnly)
+    }
+
     // MARK: – Helpers
 
     private func makeResult(confidence: Float) -> ClassificationResult {

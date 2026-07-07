@@ -22,18 +22,9 @@ struct SpecsQuizView: View {
         let value: String
     }
 
-    private let specExtractors: [(String, (Aircraft) -> String)] = [
-        ("Spannweite", { $0.wingspan.formatted(.number.precision(.fractionLength(1))) + " m" }),
-        ("Länge",      { $0.length.formatted(.number.precision(.fractionLength(1))) + " m" }),
-        ("Reichweite", { Int($0.range).formatted() + " km" }),
-        ("MTOW",       { (Int($0.mtow / 1_000)).formatted() + " t" }),
-        ("Passagiere", { $0.passengerCapacity.formatted() + " Pax" }),
-        ("Triebwerke", { "\($0.engineCount)× \($0.engineType.rawValue)" }),
-    ]
-
     var body: some View {
         VStack(spacing: 0) {
-            sessionBar
+            QuizSessionBar(viewModel: viewModel)
             Divider()
             if let target, let spec = currentSpec {
                 ScrollView {
@@ -57,27 +48,6 @@ struct SpecsQuizView: View {
         .onAppear { nextQuestion() }
     }
 
-    // MARK: – Session Bar
-
-    private var sessionBar: some View {
-        HStack {
-            Label("\(viewModel.sessionStreak)", systemImage: "flame.fill")
-                .font(.subheadline.bold())
-                .foregroundStyle(.orange)
-            Spacer()
-            Text("\(viewModel.sessionCorrect) / \(viewModel.sessionTotal) korrekt")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(
-            "Streak \(viewModel.sessionStreak), " +
-            "\(viewModel.sessionCorrect) von \(viewModel.sessionTotal) korrekt"
-        )
-    }
-
     // MARK: – Spec-Karte
 
     private func specCard(_ spec: SpecQuestion) -> some View {
@@ -90,7 +60,8 @@ struct SpecsQuizView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Text(spec.value)
-                .font(.system(size: 36, weight: .bold, design: .monospaced))
+                // Text-Style statt fester Größe → skaliert mit Dynamic Type
+                .font(.system(.largeTitle, design: .monospaced).bold())
         }
         .padding(24)
         .frame(maxWidth: .infinity)
@@ -126,30 +97,11 @@ struct SpecsQuizView: View {
     // MARK: – Ergebnis
 
     private func resultBanner(_ target: Aircraft, spec: SpecQuestion) -> some View {
-        let correct = selected?.icaoCode == target.icaoCode
-        return VStack(spacing: 8) {
-            Label(
-                correct ? "Richtig!" : "Falsch – es war \(target.variant)",
-                systemImage: correct ? "checkmark.circle.fill" : "xmark.circle.fill"
-            )
-            .font(.headline)
-            .foregroundStyle(correct ? .green : .red)
-            // Spec-Wert als Merkhilfe wiederholen, damit der Nutzer ihn einprägen kann
-            Text("\(spec.label): \(spec.value)")
-                .font(.caption.bold())
-                .foregroundStyle(.secondary)
-            Button("Nächste Frage") { nextQuestion() }
-                .buttonStyle(.borderedProminent)
-                .padding(.top, 4)
-        }
-        .padding()
-        .frame(maxWidth: .infinity)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(
-            correct ? "Richtig! \(spec.label): \(spec.value)" :
-                      "Falsch. Es war \(target.variant). \(spec.label): \(spec.value)"
-        )
+        QuizResultBanner(
+            correct:   selected?.icaoCode == target.icaoCode,
+            wrongText: "Falsch – es war \(target.variant)",
+            detail:    "\(spec.label): \(spec.value)"   // Merkhilfe zum Einprägen
+        ) { nextQuestion() }
     }
 
     // MARK: – Logik
@@ -169,19 +121,8 @@ struct SpecsQuizView: View {
         showResult = false
         target     = viewModel.pickAircraft(from: aircraft, records: allRecords, mode: mode)
         guard let t = target,
-              let ext = specExtractors.randomElement() else { return }
-        currentSpec = SpecQuestion(label: ext.0, value: ext.1(t))
-        choices     = buildChoices(for: t)
-    }
-
-    private func buildChoices(for target: Aircraft) -> [Aircraft] {
-        let lookalikes = target.lookalikes
-            .compactMap { icao in aircraft.first { $0.icaoCode == icao } }
-            .shuffled()
-        let others = aircraft
-            .filter { $0.icaoCode != target.icaoCode && !target.lookalikes.contains($0.icaoCode) }
-            .shuffled()
-        let distractors = Array((lookalikes + others).prefix(3))
-        return ([target] + distractors).shuffled()
+              let ext = QuizSpec.extended.randomElement() else { return }
+        currentSpec = SpecQuestion(label: ext.label, value: ext.value(t))
+        choices     = viewModel.buildChoices(for: t, from: aircraft)
     }
 }
