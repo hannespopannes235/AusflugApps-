@@ -6,6 +6,7 @@ struct FilterMenuView: View {
 
     var body: some View {
         Menu {
+            favoritesToggle
             manufacturerSection
             statusSection
             eraSection
@@ -27,6 +28,12 @@ struct FilterMenuView: View {
     }
 
     // MARK: – Sektionen
+
+    private var favoritesToggle: some View {
+        Toggle(isOn: $viewModel.favoritesOnly) {
+            Label("Nur Favoriten", systemImage: "star")
+        }
+    }
 
     @ViewBuilder
     private var manufacturerSection: some View {

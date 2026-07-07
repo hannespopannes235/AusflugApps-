@@ -7,9 +7,11 @@ final class DatabaseViewModel {
     var selectedManufacturers: Set<String> = []
     var selectedStatuses: Set<AircraftStatus> = []
     var selectedEra: AircraftEra? = nil
+    var favoritesOnly: Bool = false
 
     var hasActiveFilters: Bool {
-        !selectedManufacturers.isEmpty || !selectedStatuses.isEmpty || selectedEra != nil
+        !selectedManufacturers.isEmpty || !selectedStatuses.isEmpty
+            || selectedEra != nil || favoritesOnly
     }
 
     /// Gibt `true` zurück wenn der Aircraft alle aktiven Filter erfüllt.
@@ -31,7 +33,10 @@ final class DatabaseViewModel {
 
         let matchesEra = selectedEra?.matches(aircraft.firstFlightDate) ?? true
 
-        return matchesSearch && matchesManufacturer && matchesStatus && matchesEra
+        let matchesFavorite = !favoritesOnly || aircraft.isFavorite
+
+        return matchesSearch && matchesManufacturer && matchesStatus
+            && matchesEra && matchesFavorite
     }
 
     func toggleManufacturer(_ m: String) {
@@ -46,5 +51,6 @@ final class DatabaseViewModel {
         selectedManufacturers.removeAll()
         selectedStatuses.removeAll()
         selectedEra = nil
+        favoritesOnly = false
     }
 }

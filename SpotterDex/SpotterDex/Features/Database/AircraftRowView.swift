@@ -15,6 +15,12 @@ struct AircraftRowView: View {
                 HStack(alignment: .firstTextBaseline) {
                     Text(aircraft.variant)
                         .font(.headline)
+                    if aircraft.isFavorite {
+                        Image(systemName: "star.fill")
+                            .font(.caption)
+                            .foregroundStyle(.yellow)
+                            .accessibilityHidden(true)   // Label unten nennt "Favorit"
+                    }
                     Spacer()
                     Text(aircraft.icaoCode)
                         .font(.caption.monospaced())
@@ -40,7 +46,8 @@ struct AircraftRowView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
             "\(aircraft.variant), \(aircraft.manufacturer). " +
-            "ICAO \(aircraft.icaoCode). \(aircraft.status.rawValue)."
+            "ICAO \(aircraft.icaoCode). \(aircraft.status.rawValue)." +
+            (aircraft.isFavorite ? " Favorit." : "")
         )
     }
 

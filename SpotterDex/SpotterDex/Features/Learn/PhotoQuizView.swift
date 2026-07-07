@@ -77,22 +77,21 @@ struct PhotoQuizView: View {
     private func photoCard(_ a: Aircraft) -> some View {
         VStack(spacing: 0) {
             if let url = WikimediaPhotoService.imageURL(for: a.icaoCode) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 220)
-                            .clipped()
-                    case .empty:
-                        Color(.systemGray5)
-                            .frame(height: 220)
-                            .overlay { ProgressView() }
-                    default:   // .failure → offline-Fallback: Silhouette
-                        silhouetteFallback(a)
-                    }
+                // CachedRemoteImage statt AsyncImage: einmal geladene Fotos liegen
+                // im Disk-Cache → das Foto-Quiz bleibt auch offline spielbar.
+                CachedRemoteImage(url: url) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 220)
+                        .clipped()
+                } placeholder: {
+                    Color(.systemGray5)
+                        .frame(height: 220)
+                        .overlay { ProgressView() }
+                } fallback: {   // offline & nicht gecacht → Silhouette
+                    silhouetteFallback(a)
                 }
             } else {
                 silhouetteFallback(a)

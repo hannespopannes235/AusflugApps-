@@ -42,26 +42,22 @@ struct AircraftDetailView: View {
     private var photoSection: some View {
         if let imageURL = WikimediaPhotoService.imageURL(for: aircraft.icaoCode) {
             VStack(alignment: .leading, spacing: 0) {
-                AsyncImage(url: imageURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 220)
-                            .clipped()
-                            .accessibilityLabel("\(aircraft.variant) Foto")
-                    case .failure:
-                        // Offline oder Lade-Fehler → Silhouette
-                        silhouetteFallback
-                    case .empty:
-                        Color(.systemGray5)
-                            .frame(height: 220)
-                            .overlay { ProgressView() }
-                    @unknown default:
-                        silhouetteFallback
-                    }
+                // CachedRemoteImage statt AsyncImage: Foto liegt nach dem ersten
+                // Laden im Disk-Cache und ist damit auch offline verfügbar.
+                CachedRemoteImage(url: imageURL) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 220)
+                        .clipped()
+                        .accessibilityLabel("\(aircraft.variant) Foto")
+                } placeholder: {
+                    Color(.systemGray5)
+                        .frame(height: 220)
+                        .overlay { ProgressView() }
+                } fallback: {   // offline & nicht gecacht → Silhouette
+                    silhouetteFallback
                 }
 
                 // Bildnachweis – erst sichtbar wenn die API geantwortet hat

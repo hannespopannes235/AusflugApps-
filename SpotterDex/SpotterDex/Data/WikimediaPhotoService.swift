@@ -51,9 +51,40 @@ struct WikimediaPhotoService {
         return URL(string: "https://commons.wikimedia.org/wiki/File:\(encode(filename))")
     }
 
+    // MARK: – Credit-Cache
+    //
+    // Credits kommen weiterhin IMMER original von der Commons-API (nie hartcodiert),
+    // werden aber nach dem ersten Abruf persistiert: So steht der Bildnachweis auch
+    // offline neben dem (disk-gecachten) Foto – rechtlich sauber in jedem Zustand.
+
+    @MainActor private static var memoryCache: [String: PhotoCredit] = [:]
+    private static let persistKey = "com.spotterdex.commonsCredits"
+
+    @MainActor private static func cachedCredit(for icao: String) -> PhotoCredit? {
+        if let hit = memoryCache[icao] { return hit }
+        guard let stored = UserDefaults.standard.dictionary(forKey: persistKey),
+              let entry  = stored[icao] as? [String: String],
+              let artist = entry["artist"], let license = entry["license"],
+              let page   = pageURL(for: icao)
+        else { return nil }
+        let credit = PhotoCredit(artist: artist, license: license, pageURL: page)
+        memoryCache[icao] = credit
+        return credit
+    }
+
+    @MainActor private static func storeCredit(_ credit: PhotoCredit, for icao: String) {
+        memoryCache[icao] = credit
+        var stored = UserDefaults.standard.dictionary(forKey: persistKey) ?? [:]
+        stored[icao] = ["artist": credit.artist, "license": credit.license]
+        UserDefaults.standard.set(stored, forKey: persistKey)
+    }
+
     // MARK: – Live-Bildnachweis (async, keine Netz-Abhängigkeit beim Start)
 
+    @MainActor
     static func fetchCredit(for icaoCode: String) async -> PhotoCredit? {
+        if let cached = cachedCredit(for: icaoCode) { return cached }
+
         guard let filename = commonsFilenames[icaoCode],
               let page = pageURL(for: icaoCode) else { return nil }
 
@@ -82,7 +113,9 @@ struct WikimediaPhotoService {
         // HTML-Tags entfernen (Commons liefert <a href=…> im Artist-Feld)
         let artist = rawArtist.replacingOccurrences(of: "<[^>]+>", with: "",
                                                     options: .regularExpression)
-        return PhotoCredit(artist: artist, license: license, pageURL: page)
+        let credit = PhotoCredit(artist: artist, license: license, pageURL: page)
+        storeCredit(credit, for: icaoCode)
+        return credit
     }
 
     // MARK: – Hilfsmethode

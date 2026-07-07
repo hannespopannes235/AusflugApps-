@@ -288,6 +288,8 @@ const state = {
   tab: 'database',
   search: '',
   mfr: '',
+  favOnly: false,
+  favorites: new Set((arr => Array.isArray(arr) ? arr : [])(loadJson('sd_favs', []))),
   compareList: (arr => Array.isArray(arr) ? arr : [])(loadJson('sd_compare', [])),
   detailStack: [],   // ICAO stack for back navigation
   quiz: null,        // {answer, options[], picked, score, total, streak, best}
@@ -342,13 +344,20 @@ function saveCompare() {
   localStorage.setItem('sd_compare', JSON.stringify(state.compareList));
 }
 
+function toggleFavorite(icao) {
+  if (state.favorites.has(icao)) state.favorites.delete(icao);
+  else state.favorites.add(icao);
+  localStorage.setItem('sd_favs', JSON.stringify([...state.favorites]));
+}
+
 function filteredAircraft() {
   const q = state.search.toLowerCase();
   return AIRCRAFT.filter(a => {
     const matchQ = !q || [a.variant, a.manufacturer, a.family, a.icaoCode, a.iataCode]
       .some(s => s.toLowerCase().includes(q));
     const matchM = !state.mfr || a.manufacturer === state.mfr;
-    return matchQ && matchM;
+    const matchF = !state.favOnly || state.favorites.has(a.icaoCode);
+    return matchQ && matchM && matchF;
   });
 }
 
@@ -621,7 +630,7 @@ function buildAircraftListHtml() {
           <div class="aircraft-card" data-icao="${a.icaoCode}" role="button" tabindex="0" aria-label="${a.variant}">
             <div class="card-accent" style="background:${mfrColor(a.manufacturer)}"></div>
             <div class="card-body">
-              <div class="card-variant">${a.variant}</div>
+              <div class="card-variant">${a.variant}${state.favorites.has(a.icaoCode) ? ' <span class="fav-star" aria-hidden="true">★</span>' : ''}</div>
               <div class="card-meta">
                 <span>${a.manufacturer}</span>
                 ${statusBadge(a.status)}
@@ -650,12 +659,15 @@ function buildAircraftListHtml() {
 }
 
 function renderDatabase() {
-  const chipsHtml = ['', ...manufacturers].map(m =>
-    `<button class="chip${state.mfr === m ? ' active' : ''}" data-mfr="${esc(m)}"
-      aria-pressed="${state.mfr === m}">
-      ${esc(m) || 'Alle'}
-    </button>`
-  ).join('');
+  const chipsHtml = [
+    `<button class="chip${state.favOnly ? ' active' : ''}" data-fav-filter
+      aria-pressed="${state.favOnly}" aria-label="Nur Favoriten anzeigen">★ Favoriten</button>`,
+    ...['', ...manufacturers].map(m =>
+      `<button class="chip${state.mfr === m ? ' active' : ''}" data-mfr="${esc(m)}"
+        aria-pressed="${state.mfr === m}">
+        ${esc(m) || 'Alle'}
+      </button>`),
+  ].join('');
 
   appEl.innerHTML = `
     <div id="view-database" class="view active">
@@ -704,11 +716,17 @@ function renderDetail(icao) {
     .map(code => `<button class="lookalike-chip" data-icao="${code}">${find(code).variant}</button>`)
     .join('') || '<span style="color:var(--text2);font-size:14px">Keine Einträge in der Datenbank</span>';
 
+  const isFav = state.favorites.has(icao);
   detailEl.innerHTML = `
     <div class="detail-nav">
       <button class="back-btn" id="detail-back">
         <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
         Zurück
+      </button>
+      <button class="fav-btn${isFav ? ' active' : ''}" id="detail-fav"
+        aria-pressed="${isFav}"
+        aria-label="${isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}">
+        ${isFav ? '★' : '☆'}
       </button>
     </div>
 
@@ -794,9 +812,13 @@ function renderDetail(icao) {
   // Events – "Zurück" geht über die Browser-History, damit UI-Button,
   // Hardware-Back und Escape-Taste denselben Pfad nehmen (popstate).
   document.getElementById('detail-back').addEventListener('click', () => history.back());
+  document.getElementById('detail-fav').addEventListener('click', () => {
+    toggleFavorite(icao);
+    renderDetail(icao);   // reines Re-Render, Stack bleibt unangetastet
+  });
   document.getElementById('detail-cta-btn').addEventListener('click', () => {
     toggleCompare(icao);
-    renderDetail(icao);   // reines Re-Render, Stack bleibt unangetastet
+    renderDetail(icao);
   });
   detailEl.querySelectorAll('.lookalike-chip').forEach(btn => {
     btn.addEventListener('click', () => openDetail(btn.dataset.icao));
@@ -982,7 +1004,7 @@ function renderInfo() {
           <div class="info-card-title">iOS-App</div>
           <p>SpotterDex ist auch als native iOS-App (SwiftUI, iOS 17+) verfügbar – mit on-device ML-Erkennung per Foto und Spaced-Repetition-Lernmodi.</p>
         </div>
-        <p class="info-version">SpotterDex Web v1.5 · ${new Date().getFullYear()}</p>
+        <p class="info-version">SpotterDex Web v1.6 · ${new Date().getFullYear()}</p>
       </div>
     </div>`;
 }
@@ -1245,6 +1267,14 @@ appEl.addEventListener('click', e => {
   const quizPick = e.target.closest('[data-quiz-pick]');
   if (quizPick) {
     answerQuiz(quizPick.dataset.quizPick);
+    return;
+  }
+
+  // Favoriten-Filter-Chip
+  const favChip = e.target.closest('[data-fav-filter]');
+  if (favChip) {
+    state.favOnly = !state.favOnly;
+    renderDatabase();
     return;
   }
 

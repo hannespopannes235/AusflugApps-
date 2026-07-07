@@ -36,6 +36,7 @@
 		A1B2C3D4E5FA0006 /* SpecsQuizView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FA0005 /* SpecsQuizView.swift */; };
 		A1B2C3D4E5FA0008 /* SpotDiffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FA0007 /* SpotDiffView.swift */; };
 		A1B2C3D4E5FA0010 /* ChoiceButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FA0009 /* ChoiceButton.swift */; };
+		A1B2C3D4E5FE0002 /* CachedRemoteImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FE0001 /* CachedRemoteImage.swift */; };
 		A1B2C3D4E5FB0002 /* ClassificationResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FB0001 /* ClassificationResult.swift */; };
 		A1B2C3D4E5FB0004 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FB0003 /* CameraView.swift */; };
 		A1B2C3D4E5FC0002 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5FC0001 /* OnboardingView.swift */; };
@@ -88,6 +89,7 @@
 		A1B2C3D4E5FA0005 /* SpecsQuizView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecsQuizView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5FA0007 /* SpotDiffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotDiffView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5FA0009 /* ChoiceButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChoiceButton.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5FE0001 /* CachedRemoteImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedRemoteImage.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5FB0001 /* ClassificationResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassificationResult.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5FB0003 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5FC0001 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
@@ -175,6 +177,7 @@
 			children = (
 				A1B2C3D4E5F80003 /* StatusBadge.swift */,
 				A1B2C3D4E5F90005 /* AircraftSilhouetteView.swift */,
+				A1B2C3D4E5FE0001 /* CachedRemoteImage.swift */,
 				A1B2C3D4E5F90007 /* SpecRow.swift */,
 				A1B2C3D4E5FA0009 /* ChoiceButton.swift */,
 				A1B2C3D4E5FC0007 /* DesignSystem.swift */,
@@ -408,6 +411,7 @@
 				A1B2C3D4E5FA0006 /* SpecsQuizView.swift in Sources */,
 				A1B2C3D4E5FA0008 /* SpotDiffView.swift in Sources */,
 				A1B2C3D4E5FA0010 /* ChoiceButton.swift in Sources */,
+				A1B2C3D4E5FE0002 /* CachedRemoteImage.swift in Sources */,
 				A1B2C3D4E5FB0002 /* ClassificationResult.swift in Sources */,
 				A1B2C3D4E5FB0004 /* CameraView.swift in Sources */,
 				A1B2C3D4E5FC0002 /* OnboardingView.swift in Sources */,
