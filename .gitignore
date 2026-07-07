@@ -1,0 +1,69 @@
+# ─── Xcode ────────────────────────────────────────────────────────────────────
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcworkspace/xcshareddata/
+xcuserdata/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+
+# Build results
+build/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# ─── Swift Package Manager ────────────────────────────────────────────────────
+.build/
+.swiftpm/
+Packages/
+Package.resolved
+
+# ─── CocoaPods ────────────────────────────────────────────────────────────────
+Pods/
+*.xcworkspace
+!SpotterDex/SpotterDex.xcodeproj/project.xcworkspace
+
+# ─── macOS ────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# ─── Core ML ──────────────────────────────────────────────────────────────────
+*.mlmodelc/
+
+# ─── ML-Trainingsdaten (lokal, nicht ins Repo) ────────────────────────────────
+# Heruntergeladene Trainingsbilder sind groß und werden lokal erzeugt.
+# Die Lizenz-Belege (credits.*) sollen aber als Nachweis aufbewahrt werden.
+ml/dataset/*/
+!ml/dataset/credits.csv
+!ml/dataset/credits.json
+ml/*.mlpackage/
+
+# ─── JetBrains / VS Code ──────────────────────────────────────────────────────
+.idea/
+*.swp
+*.swo
+.vscode/
+
+# ─── Misc ─────────────────────────────────────────────────────────────────────
+*.log
+*.tmp
+
+# ─── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc

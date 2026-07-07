@@ -1,0 +1,1206 @@
+'use strict';
+
+// Flugzeugdaten: kommen aus data.js (autogeneriert aus dem iOS-Seed –
+// siehe web/tools/build_data.py). Diese Datei definiert `AIRCRAFT` global.
+
+// ── State ──────────────────────────────────────────────────────────────────────
+// Korrupte localStorage-Werte dürfen den App-Start nicht crashen.
+function loadJson(key, fallback) {
+  try {
+    const v = JSON.parse(localStorage.getItem(key));
+    return v ?? fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+const state = {
+  tab: 'database',
+  search: '',
+  mfr: '',
+  favOnly: false,
+  favorites: new Set((arr => Array.isArray(arr) ? arr : [])(loadJson('sd_favs', []))),
+  compareList: (arr => Array.isArray(arr) ? arr : [])(loadJson('sd_compare', [])),
+  detailStack: [],   // ICAO stack for back navigation
+  quizMode: 'photo', // 'photo' | 'specs'
+  quiz: null,        // {mode, answer, specIdx, options[], picked, score, total, streak, best}
+};
+
+// ── DOM refs ───────────────────────────────────────────────────────────────────
+const appEl     = document.getElementById('app');
+const detailEl  = document.getElementById('detail-overlay');
+const pickerEl  = document.getElementById('picker-sheet');
+const pickerIn  = document.getElementById('picker-input');
+const pickerList = document.getElementById('picker-list');
+const tabs      = document.querySelectorAll('.tab');
+
+// ── Utils ──────────────────────────────────────────────────────────────────────
+const find = icao => AIRCRAFT.find(a => a.icaoCode === icao);
+const manufacturers = [...new Set(AIRCRAFT.map(a => a.manufacturer))].sort();
+
+// HTML-Escaping für alles, was nicht aus unserem eigenen Code stammt
+// (Sucheingaben, Remote-Daten wie Commons-Urheber).
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function mfrColor(m) {
+  return { Airbus: '#0077CC', Boeing: '#CC2200', Embraer: '#12A642', ATR: '#E65100' }[m] || '#4D5259';
+}
+
+function statusBadge(s) {
+  const map = {
+    inProduction:    ['badge-green', 'Produktion'],
+    outOfProduction: ['badge-amber', 'Außer Prod.'],
+    retired:         ['badge-red',   'Ausgemustert'],
+    prototype:       ['badge-gray',  'Prototyp'],
+  };
+  const [cls, lbl] = map[s] || ['badge-gray', s];
+  return `<span class="badge ${cls}">${lbl}</span>`;
+}
+
+function engineBadge(type, count) {
+  const lbl = type === 'turboprop' ? 'Prop' : 'Jet';
+  return `<span class="badge badge-blue">${count}× ${lbl}</span>`;
+}
+
+function fmt(n, dec = 0) {
+  if (n == null || Number.isNaN(n)) return '–';   // 0 ist ein legitimer Wert
+  return n.toLocaleString('de-DE', { maximumFractionDigits: dec });
+}
+
+function saveCompare() {
+  localStorage.setItem('sd_compare', JSON.stringify(state.compareList));
+}
+
+function toggleFavorite(icao) {
+  if (state.favorites.has(icao)) state.favorites.delete(icao);
+  else state.favorites.add(icao);
+  localStorage.setItem('sd_favs', JSON.stringify([...state.favorites]));
+}
+
+function filteredAircraft() {
+  const q = state.search.toLowerCase();
+  return AIRCRAFT.filter(a => {
+    const matchQ = !q || [a.variant, a.manufacturer, a.family, a.icaoCode, a.iataCode]
+      .some(s => s.toLowerCase().includes(q));
+    const matchM = !state.mfr || a.manufacturer === state.mfr;
+    const matchF = !state.favOnly || state.favorites.has(a.icaoCode);
+    return matchQ && matchM && matchF;
+  });
+}
+
+// ── Fotos: Wikimedia Commons (Standard) + eigene Fotos (Override) ───────────────
+// Hier stehen NUR die echten Commons-Dateinamen. Urheber & Lizenz werden zur
+// Laufzeit LIVE aus der Commons-API geladen (fetchCommonsCredit) – so sind die
+// Angaben immer korrekt und werden niemals im Code "geraten".
+const WIKI_PHOTO = {
+  BCS3: 'Swiss, HB-JCC, Airbus A220-300.jpg',
+  A20N: 'Hannover Airport SKY express Airbus A320-251N SX-TEC (DSC00198).jpg',
+  A359: 'Lufthansa, D-AIXO, Airbus A350-941 (49581146632).jpg',
+  A388: 'Singapore Airlines Airbus A380-800 9V-SKN (7721163326).jpg',
+  B738: 'WestJet Boeing 737-800 C-GXWJ (24734543535).jpg',
+  B77W: 'Air Canada Boeing 777-300ER C-FITU (28483755286).jpg',
+  B789: 'United Airlines, N17963, Boeing 787-9 Dreamliner (35595342772).jpg',
+  B748: 'Lufthansa Boeing 747-8i.jpg',
+  E295: 'Embraer E195-E2 (ERJ 190-400 STD) PS-AEF.jpg',
+  AT76: 'Stobart Air ATR 72-600 (EI-FSL) at Manchester Airport.jpg',
+  B38M: 'Norwegian Air Sweden SE-RTB Boeing 737-MAX 8 Amsterdam Airport Schiphol (AMS EHAM) (52724014741).jpg',
+  A21N: 'Aegean Airlines, SX-NAA, Airbus A321-271NX (51007089432).jpg',
+  A333: 'Lufthansa Airbus A330-300 D-AIKB (7721065166) (2).jpg',
+  B763: 'KLM Boeing 767-300ER PH-BZM (2193203008).jpg',
+  E190: 'Embraer ERJ-190-100LR 190LR (PH-EZH) 03.jpg',
+  CRJ9: 'Eurowings (Lufthansa Regional) Bombardier CRJ900 at Berlin Tegel Airport.JPG',
+  DH8D: 'Wideroe, LN-WDL, Bombardier Dash 8 Q400 (42435285354).jpg',
+  F100: 'Helvetic Airways Fokker 100 (F-28-0100) HB-JVG (25446724953).jpg',
+};
+
+const commonsImg  = n => `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(n)}?width=900`;
+const commonsPage = n => `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(n)}`;
+const commonsApi  = n => `https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*` +
+  `&prop=imageinfo&iiprop=extmetadata&iiextmetadatafilter=Artist|LicenseShortName|LicenseUrl&titles=File:${encodeURIComponent(n)}`;
+
+// Urheber & Lizenz live aus Commons holen → {artist, license} oder null (offline).
+// In-Memory-Cache: identische Dateien (Quiz-Re-Render, erneuter Detail-Besuch)
+// lösen keinen zweiten API-Call aus.
+const creditCache = new Map();
+async function fetchCommonsCredit(name) {
+  if (creditCache.has(name)) return creditCache.get(name);
+  try {
+    const r = await fetch(commonsApi(name));
+    const j = await r.json();
+    const pages = j.query.pages;
+    const page = pages[Object.keys(pages)[0]];
+    const ext = page.imageinfo[0].extmetadata;
+    const strip = h => (h || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    const artist = strip(ext.Artist && ext.Artist.value) || 'Unbekannt';
+    const license = strip(ext.LicenseShortName && ext.LicenseShortName.value) || '';
+    const credit = { artist, license };
+    creditCache.set(name, credit);
+    return credit;
+  } catch (e) {
+    return null;   // offline → bewusst NICHT cachen, nächster Versuch darf klappen
+  }
+}
+
+// ── Eigene Fotos: IndexedDB (Schlüssel = ICAO, Wert = data-URL) ──────────────────
+const PHOTO_DB = 'spotterdex', PHOTO_STORE = 'photos';
+function openPhotoDb() {
+  return new Promise((res, rej) => {
+    const rq = indexedDB.open(PHOTO_DB, 1);
+    rq.onupgradeneeded = () => rq.result.createObjectStore(PHOTO_STORE);
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej(rq.error);
+  });
+}
+async function getUserPhoto(icao) {
+  try {
+    const db = await openPhotoDb();
+    return await new Promise(res => {
+      const rq = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE).get(icao);
+      rq.onsuccess = () => res(rq.result || null);
+      rq.onerror = () => res(null);
+    });
+  } catch (e) { return null; }
+}
+async function setUserPhoto(icao, dataUrl) {
+  const db = await openPhotoDb();
+  return new Promise(res => {
+    const rq = db.transaction(PHOTO_STORE, 'readwrite').objectStore(PHOTO_STORE).put(dataUrl, icao);
+    rq.onsuccess = () => res(true); rq.onerror = () => res(false);
+  });
+}
+async function delUserPhoto(icao) {
+  const db = await openPhotoDb();
+  return new Promise(res => {
+    const rq = db.transaction(PHOTO_STORE, 'readwrite').objectStore(PHOTO_STORE).delete(icao);
+    rq.onsuccess = () => res(true); rq.onerror = () => res(false);
+  });
+}
+
+// Hochgeladenes Bild verkleinern (spart Speicher) → JPEG-data-URL
+function fileToDataUrl(file, maxW = 1000) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const scale = Math.min(1, maxW / img.width);
+      const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('img')); };
+    img.src = url;
+  });
+}
+
+// Datei-Dialog öffnen → speichern → Fotobereich neu rendern
+function pickPhoto(icao) {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.onchange = async () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      await setUserPhoto(icao, dataUrl);
+      renderPhoto(icao);
+    } catch (e) { /* ignorieren */ }
+  };
+  input.click();
+}
+
+// Fotobereich der Detailansicht asynchron füllen.
+// Priorität: eigenes Foto > Wikimedia-Standard > nur "Hinzufügen"-Button.
+async function renderPhoto(icao) {
+  const wrap = document.getElementById('photo-wrap');
+  if (!wrap) return;
+  const userPhoto = await getUserPhoto(icao);
+  const wiki = WIKI_PHOTO[icao];
+
+  if (userPhoto) {
+    wrap.innerHTML = `
+      <div class="photo-card">
+        <img class="ac-photo" src="${userPhoto}" alt="Eigenes Foto">
+        <span class="photo-credit static"><b>Eigenes Foto</b></span>
+      </div>
+      <div class="photo-actions">
+        <button class="photo-btn" data-photo-pick>Foto ändern</button>
+        <button class="photo-btn danger" data-photo-del>Entfernen</button>
+      </div>`;
+  } else if (wiki) {
+    wrap.innerHTML = `
+      <div class="photo-card">
+        <img class="ac-photo" src="${commonsImg(wiki)}" alt="Foto" loading="lazy"
+             referrerpolicy="no-referrer"
+             onerror="this.closest('.photo-card').classList.add('failed')">
+        <a class="photo-credit" id="photo-credit" href="${commonsPage(wiki)}" target="_blank" rel="noopener">
+          Foto: Wikimedia Commons ↗
+        </a>
+      </div>
+      <div class="photo-actions">
+        <button class="photo-btn" data-photo-pick>Eigenes Foto hinzufügen</button>
+      </div>`;
+    // Echte Attribution live nachladen (keine erfundenen Angaben).
+    // textContent statt innerHTML: Der Urheber-String kommt von extern.
+    fetchCommonsCredit(wiki).then(c => {
+      const el = document.getElementById('photo-credit');
+      if (el && c) el.textContent = `Foto: ${c.artist}${c.license ? ' · ' + c.license : ''} · Wikimedia ↗`;
+    });
+  } else {
+    wrap.innerHTML = `
+      <div class="photo-actions">
+        <button class="photo-btn" data-photo-pick>Eigenes Foto hinzufügen</button>
+      </div>`;
+  }
+
+  const pick = wrap.querySelector('[data-photo-pick]');
+  if (pick) pick.addEventListener('click', () => pickPhoto(icao));
+  const del = wrap.querySelector('[data-photo-del]');
+  if (del) del.addEventListener('click', async () => { await delUserPhoto(icao); renderPhoto(icao); });
+}
+
+// ── Silhouette (Canvas) ────────────────────────────────────────────────────────
+function drawSilhouette(canvas, ac, color) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const sx = (W * 0.88) / ac.wingspan;
+  const sy = (H * 0.86) / ac.length;
+  const s  = Math.min(sx, sy);
+
+  const cx = W / 2, cy = H / 2;
+  const fw = Math.max(5, ac.wingspan * 0.042 * s);
+  const fl = ac.length * s;
+
+  // wing attachment point: ~28% from nose = -14% from center
+  const wingY = cy - fl * 0.08;
+  const ws    = ac.wingspan / 2 * s;
+  const wc    = ac.length * 0.11 * s;  // root chord
+
+  // tail
+  const tailY = cy + fl * 0.40;
+  const ts    = ac.wingspan * 0.24 * s;
+  const tc    = ac.length * 0.055 * s;
+
+  ctx.fillStyle = color;
+
+  // fuselage
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, fw, fl / 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // wings (swept)
+  for (const sign of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(cx + sign * fw * 0.7, wingY - wc * 0.15);
+    ctx.lineTo(cx + sign * ws,       wingY + wc * 0.65);
+    ctx.lineTo(cx + sign * ws * 0.93, wingY + wc);
+    ctx.lineTo(cx + sign * fw * 0.7, wingY + wc * 0.55);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // horizontal tail
+  for (const sign of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(cx + sign * fw * 0.6, tailY);
+    ctx.lineTo(cx + sign * ts,       tailY + tc * 0.7);
+    ctx.lineTo(cx + sign * ts * 0.9, tailY + tc * 1.3);
+    ctx.lineTo(cx + sign * fw * 0.6, tailY + tc);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // engines
+  if (ac.enginePosition === 'rear') {
+    // Heck-montiert (z. B. CRJ900, Fokker 100): dicht am Rumpf, weit hinten
+    const ex = fw * 1.75;
+    const eyR = cy + fl * 0.20;
+    const ewR = fw * 0.6;
+    const ehR = ac.length * 0.075 * s;
+    for (const sign of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(cx + sign * ex, eyR, ewR, ehR, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else {
+    // Flügel-montiert (Standard): 2 Triebwerke, oder 4 weiter außen verteilt
+    const engSpans = ac.engineCount >= 4
+      ? [ws * 0.32, ws * 0.62]
+      : [ws * 0.48];
+    const ew = fw * 0.52;
+    const eh = ac.length * 0.065 * s;
+    const ey = wingY + wc * 0.22;
+
+    for (const ex of engSpans) {
+      for (const sign of [-1, 1]) {
+        ctx.beginPath();
+        ctx.ellipse(cx + sign * ex, ey, ew, eh, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+}
+
+// ── Database view ──────────────────────────────────────────────────────────────
+// Nur die Karten-Liste (ohne Header/Suchfeld) als HTML bauen – wird beim Tippen
+// separat aktualisiert, damit das Suchfeld fokussiert und der Cursor stehen bleibt.
+function buildAircraftListHtml() {
+  const list = filteredAircraft();
+  return list.length
+    ? list.map(a => {
+        const inCmp = state.compareList.includes(a.icaoCode);
+        return `
+          <div class="aircraft-card" data-icao="${a.icaoCode}" role="button" tabindex="0" aria-label="${a.variant}">
+            <div class="card-accent" style="background:${mfrColor(a.manufacturer)}"></div>
+            <div class="card-body">
+              <div class="card-variant">${a.variant}${state.favorites.has(a.icaoCode) ? ' <span class="fav-star" aria-hidden="true">★</span>' : ''}</div>
+              <div class="card-meta">
+                <span>${a.manufacturer}</span>
+                ${statusBadge(a.status)}
+                ${engineBadge(a.engineType, a.engineCount)}
+              </div>
+            </div>
+            <button class="card-add${inCmp ? ' in-compare' : ''}" data-add="${a.icaoCode}"
+              aria-label="${inCmp ? 'Aus Vergleich entfernen' : 'Zum Vergleich hinzufügen'}"
+              title="${inCmp ? 'Aus Vergleich entfernen' : 'Zum Vergleich hinzufügen'}">
+              <svg viewBox="0 0 24 24">
+                ${inCmp
+                  ? '<polyline points="20 6 9 17 4 12"/>'
+                  : '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'}
+              </svg>
+            </button>
+            <span class="card-chevron">
+              <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </span>
+          </div>`;
+      }).join('')
+    : `<div class="empty">
+        <div class="empty-icon">✈️</div>
+        <div class="empty-title">Keine Treffer</div>
+        <p>Versuche einen anderen Suchbegriff oder filter.</p>
+      </div>`;
+}
+
+function renderDatabase() {
+  const chipsHtml = [
+    `<button class="chip${state.favOnly ? ' active' : ''}" data-fav-filter
+      aria-pressed="${state.favOnly}" aria-label="Nur Favoriten anzeigen">★ Favoriten</button>`,
+    ...['', ...manufacturers].map(m =>
+      `<button class="chip${state.mfr === m ? ' active' : ''}" data-mfr="${esc(m)}"
+        aria-pressed="${state.mfr === m}">
+        ${esc(m) || 'Alle'}
+      </button>`),
+  ].join('');
+
+  appEl.innerHTML = `
+    <div id="view-database" class="view active">
+      <div class="view-header">
+        <h1 class="view-title">Datenbank</h1>
+        <div class="search-bar">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="search" id="search-input" placeholder="Typ, Hersteller, ICAO …"
+            value="${esc(state.search)}" autocomplete="off" autocorrect="off"
+            aria-label="Flugzeugtyp suchen">
+        </div>
+        <div class="filter-chips">${chipsHtml}</div>
+      </div>
+      <div class="aircraft-list">${buildAircraftListHtml()}</div>
+    </div>`;
+
+  // Beim Tippen NUR die Liste neu rendern – Suchfeld/Fokus/Cursor bleiben stehen.
+  document.getElementById('search-input').addEventListener('input', e => {
+    state.search = e.target.value;
+    const listEl = appEl.querySelector('.aircraft-list');
+    if (listEl) listEl.innerHTML = buildAircraftListHtml();
+  });
+}
+
+// ── Detail view ────────────────────────────────────────────────────────────────
+// openDetail = Navigation (Stack + Browser-History), renderDetail = reines Rendering.
+// So kann der Vergleich-Button neu rendern, ohne den Stack zu verfälschen, und
+// der Browser-/Android-Back-Button schließt das Overlay statt die App zu verlassen.
+function openDetail(icao) {
+  const a = find(icao);
+  if (!a) return;
+  state.detailStack.push(icao);
+  history.pushState({ sdOverlay: 'detail', depth: state.detailStack.length }, '');
+  renderDetail(icao);
+}
+
+function renderDetail(icao) {
+  const a = find(icao);
+  if (!a) return;
+
+  const inCmp = state.compareList.includes(icao);
+  const color = mfrColor(a.manufacturer);
+
+  const lookalikesHtml = (a.lookalikes || [])
+    .filter(code => code !== a.icaoCode && find(code))   // keine Selbstreferenzen
+    .map(code => `<button class="lookalike-chip" data-icao="${code}">${find(code).variant}</button>`)
+    .join('') || '<span style="color:var(--text2);font-size:14px">Keine Einträge in der Datenbank</span>';
+
+  const isFav = state.favorites.has(icao);
+  detailEl.innerHTML = `
+    <div class="detail-nav">
+      <button class="back-btn" id="detail-back">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        Zurück
+      </button>
+      <button class="fav-btn${isFav ? ' active' : ''}" id="detail-fav"
+        aria-pressed="${isFav}"
+        aria-label="${isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}">
+        ${isFav ? '★' : '☆'}
+      </button>
+    </div>
+
+    <div class="detail-header">
+      <div class="detail-mfr">${a.manufacturer} · ${a.family}</div>
+      <div class="detail-name">${a.variant}</div>
+      <div class="detail-codes">
+        <span class="badge badge-blue">ICAO: ${a.icaoCode}</span>
+        <span class="badge badge-gray">IATA: ${a.iataCode || '–'}</span>
+        ${statusBadge(a.status)}
+        ${a.firstFlightYear ? `<span class="badge badge-gray">Erstflug ${a.firstFlightYear}</span>` : ''}
+      </div>
+    </div>
+
+    <div class="photo-wrap" id="photo-wrap"></div>
+
+    <a class="detail-live" href="https://www.flightaware.com/live/aircrafttype/${encodeURIComponent(a.icaoCode)}" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M2 12h4l3-9 4 18 3-9h6"/></svg>
+      <span>${a.variant} jetzt live verfolgen</span>
+      <span class="live-ext">↗</span>
+    </a>
+
+    <div class="silhouette-label">Silhouette · Draufsicht</div>
+    <div class="silhouette-wrap">
+      <canvas id="silhouette-canvas" width="220" height="280"></canvas>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Technische Daten</div>
+      <div class="specs-grid">
+        <div class="spec-row"><span class="spec-label">Spannweite</span>
+          <span class="spec-val">${fmt(a.wingspan, 1)}</span><span class="spec-unit">m</span></div>
+        <div class="spec-row"><span class="spec-label">Länge</span>
+          <span class="spec-val">${fmt(a.length, 1)}</span><span class="spec-unit">m</span></div>
+        <div class="spec-row"><span class="spec-label">Höhe</span>
+          <span class="spec-val">${fmt(a.height, 1)}</span><span class="spec-unit">m</span></div>
+        <div class="spec-row"><span class="spec-label">MTOW</span>
+          <span class="spec-val">${fmt(a.mtow / 1000, 1)}</span><span class="spec-unit">t</span></div>
+        <div class="spec-row"><span class="spec-label">Reichweite</span>
+          <span class="spec-val">${fmt(a.range)}</span><span class="spec-unit">km</span></div>
+        <div class="spec-row"><span class="spec-label">Reisegeschw.</span>
+          <span class="spec-val">${fmt(a.cruiseSpeed)}</span><span class="spec-unit">km/h</span></div>
+        <div class="spec-row"><span class="spec-label">Passagiere</span>
+          <span class="spec-val">${fmt(a.passengerCapacity)}</span></div>
+        <div class="spec-row"><span class="spec-label">Triebwerke</span>
+          <span class="spec-val">${a.engineCount}×</span>
+          <span class="spec-unit">${a.engineType}</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Erkennungsmerkmale</div>
+      <div class="feature-list">
+        ${(a.visualFeatures || []).map(f =>
+          `<div class="feature-item"><span class="feature-dot">•</span>${f}</div>`
+        ).join('')}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Verwechslungspartner</div>
+      <div class="lookalike-chips">${lookalikesHtml}</div>
+    </div>
+
+    <button class="detail-cta${inCmp ? ' added' : ''}" id="detail-cta-btn">
+      <svg viewBox="0 0 24 24" width="18" height="18">
+        ${inCmp
+          ? '<polyline points="20 6 9 17 4 12"/>'
+          : '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'}
+      </svg>
+      ${inCmp ? 'Im Vergleich' : 'Zum Vergleich hinzufügen'}
+    </button>`;
+
+  // Draw silhouette
+  requestAnimationFrame(() => {
+    const canvas = document.getElementById('silhouette-canvas');
+    if (canvas) drawSilhouette(canvas, a, color + 'CC');
+  });
+
+  // Foto laden (eigenes Foto > Wikimedia > nur Button)
+  renderPhoto(icao);
+
+  // Events – "Zurück" geht über die Browser-History, damit UI-Button,
+  // Hardware-Back und Escape-Taste denselben Pfad nehmen (popstate).
+  document.getElementById('detail-back').addEventListener('click', () => history.back());
+  document.getElementById('detail-fav').addEventListener('click', () => {
+    toggleFavorite(icao);
+    renderDetail(icao);   // reines Re-Render, Stack bleibt unangetastet
+  });
+  document.getElementById('detail-cta-btn').addEventListener('click', () => {
+    toggleCompare(icao);
+    renderDetail(icao);
+  });
+  detailEl.querySelectorAll('.lookalike-chip').forEach(btn => {
+    btn.addEventListener('click', () => openDetail(btn.dataset.icao));
+  });
+
+  detailEl.classList.add('open');
+  detailEl.scrollTop = 0;                                // immer oben starten
+  const backBtn = document.getElementById('detail-back');
+  if (backBtn) backBtn.focus();                          // Fokus ins Overlay holen
+}
+
+// Wird von popstate aufgerufen (nie direkt) – eine Ebene zurück.
+function closeDetailLevel() {
+  state.detailStack.pop();
+  if (state.detailStack.length > 0) {
+    renderDetail(state.detailStack[state.detailStack.length - 1]);
+  } else {
+    detailEl.classList.remove('open');
+    setTimeout(() => { detailEl.innerHTML = ''; }, 300);
+  }
+}
+
+// ── Compare view ───────────────────────────────────────────────────────────────
+function renderCompare() {
+  const list = state.compareList.map(find).filter(Boolean);
+  const count = list.length;
+
+  // Slots (up to 3)
+  const slots = [0, 1, 2].map(i => {
+    const a = list[i];
+    if (a) {
+      return `<div class="compare-slot filled">
+        <div>
+          <div class="slot-name">${a.variant}</div>
+          <div class="slot-icao">${a.icaoCode}</div>
+        </div>
+        <button class="slot-rm" data-rm="${a.icaoCode}" aria-label="${a.variant} entfernen">×</button>
+      </div>`;
+    }
+    return `<div class="compare-slot" data-pick="${i}">
+      <span class="slot-add-icon">＋</span>
+      <span class="slot-empty-text">Hinzufügen</span>
+    </div>`;
+  }).join('');
+
+  // Wingspan visual
+  let wingspanViz = '';
+  if (count > 0) {
+    const maxWs = Math.max(...list.map(a => a.wingspan));
+    const rows = list.map((a, i) => {
+      const colors = ['var(--blue)', 'var(--green)', 'var(--amber)'];
+      const pct = (a.wingspan / maxWs * 100).toFixed(1);
+      return `<div class="ws-row">
+        <span class="ws-label">${a.variant}</span>
+        <div class="ws-bar-bg"><div class="ws-bar" style="width:${pct}%;background:${colors[i]}"></div></div>
+        <span class="ws-val">${fmt(a.wingspan, 1)} m</span>
+      </div>`;
+    }).join('');
+    wingspanViz = `<div class="wingspan-viz">
+      <div class="wingspan-viz-title">Spannweite im Verhältnis</div>
+      ${rows}
+    </div>`;
+  }
+
+  // Comparison table
+  let tableHtml = '';
+  if (count > 1) {
+    const specs = [
+      { label: 'Spannweite', key: 'wingspan',         unit: 'm',    dec: 1, higher: true },
+      { label: 'Länge',      key: 'length',           unit: 'm',    dec: 1, higher: false },
+      { label: 'MTOW',       key: 'mtow',             unit: 'kg',   dec: 0, higher: true,
+        fmt: v => fmt(v / 1000, 1) + ' t' },
+      { label: 'Reichweite', key: 'range',            unit: 'km',   dec: 0, higher: true },
+      { label: 'Reisegeschw.',key: 'cruiseSpeed',     unit: 'km/h', dec: 0, higher: true },
+      { label: 'Passagiere', key: 'passengerCapacity', unit: '',    dec: 0, higher: true },
+    ];
+
+    const headerCells = ['<th></th>', ...list.map(a =>
+      `<th><span class="cmp-th-variant">${a.variant}</span><span class="cmp-th-icao">${a.icaoCode}</span></th>`)].join('');
+
+    const dataRows = specs.map(spec => {
+      const vals = list.map(a => a[spec.key]);
+      const maxV = Math.max(...vals);
+      const minV = Math.min(...vals);
+      const allSame = vals.every(v => v === vals[0]);
+
+      const cells = list.map((a, i) => {
+        const v = a[spec.key];
+        const display = spec.fmt ? spec.fmt(v) : fmt(v, spec.dec) + (spec.unit ? ` ${spec.unit}` : '');
+        let cls = '';
+        if (!allSame) {
+          cls = (spec.higher ? v === maxV : v === minV) ? ' class="val-best"'
+              : (spec.higher ? v === minV : v === maxV) ? ' class="val-worst"' : '';
+        }
+        return `<td${cls}>${display}</td>`;
+      }).join('');
+
+      return `<tr><td>${spec.label}</td>${cells}</tr>`;
+    }).join('');
+
+    tableHtml = `
+      <p class="section-title" style="padding: 0 var(--sp-m); margin-bottom:var(--sp-s)">
+        Vergleich — <span style="color:var(--green)">Grün</span> = Bestwert
+      </p>
+      <div class="compare-table-wrap">
+        <table class="compare-table">
+          <thead><tr>${headerCells}</tr></thead>
+          <tbody>${dataRows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  const emptyHint = count === 0
+    ? `<div class="empty">
+        <div class="empty-icon">⚖️</div>
+        <div class="empty-title">Noch keine Auswahl</div>
+        <p>Füge bis zu 3 Flugzeuge über die Datenbank oder die Slots oben hinzu.</p>
+      </div>` : '';
+
+  appEl.innerHTML = `
+    <div id="view-compare" class="view active">
+      <div class="compare-header" style="padding-top:calc(var(--sp-m) + env(safe-area-inset-top))">
+        <h1 class="view-title">
+          Vergleich
+          ${count > 0 ? `<span class="compare-badge">${count}</span>` : ''}
+        </h1>
+      </div>
+      <div class="compare-slots">${slots}</div>
+      ${wingspanViz}
+      ${tableHtml}
+      ${emptyHint}
+    </div>`;
+
+  document.querySelectorAll('.slot-rm').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleCompare(btn.dataset.rm);
+      renderCompare();
+    });
+  });
+  document.querySelectorAll('[data-pick]').forEach(slot => {
+    slot.addEventListener('click', () => openPicker());
+  });
+}
+
+// ── Info view ──────────────────────────────────────────────────────────────────
+function renderInfo() {
+  appEl.innerHTML = `
+    <div id="view-info" class="view active">
+      <div class="view-header">
+        <h1 class="view-title">Info</h1>
+      </div>
+      <div class="info-body">
+        <div class="info-card">
+          <div class="info-card-title">✈️ SpotterDex</div>
+          <p>Dein digitales Handbuch für Planespotter. 18 Flugzeugtypen erkennen, vergleichen und im Quiz meistern — vollständig offline.</p>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title">Daten & Quellen</div>
+          <p>Die Flugzeugdaten wurden aus öffentlichen Quellen zusammengestellt:</p>
+          <ul>
+            <li>Wikidata (CC0)</li>
+            <li>Jane's All the World's Aircraft</li>
+            <li>Herstellerdatenblätter (öffentlich)</li>
+          </ul>
+          <p style="margin-top:8px">Maße in SI (m / kg / km / km·h⁻¹). Fotos: Wikimedia Commons – Urheber und Lizenz werden je Bild live aus der Quelle geladen und unter dem Foto angezeigt. Eigene Fotos kannst du in der Detailansicht hinzufügen.</p>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title">Datenschutz</div>
+          <p>SpotterDex sammelt keine Nutzerdaten und enthält keine Tracker oder Analyse-Tools. Datenbank, Suche, Vergleich und Quiz funktionieren vollständig offline und on-device. Eigene Fotos bleiben ausschließlich lokal auf deinem Gerät.</p>
+          <p style="margin-top:8px">Optional &amp; nur bei Bedarf: Referenzfotos werden online von Wikimedia Commons geladen, und „Live verfolgen" öffnet FlightAware in einem neuen Tab. Beim Aufruf dieser externen Dienste gelten deren Datenschutzbestimmungen.</p>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title">Technologie</div>
+          <ul>
+            <li>Vanilla HTML / CSS / JavaScript</li>
+            <li>Progressive Web App (PWA)</li>
+            <li>Offline via Service Worker</li>
+            <li>Installierbar auf iOS & Android</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title">iOS-App</div>
+          <p>SpotterDex ist auch als native iOS-App (SwiftUI, iOS 17+) verfügbar – mit on-device ML-Erkennung per Foto und Spaced-Repetition-Lernmodi.</p>
+        </div>
+        <p class="info-version">SpotterDex Web v1.8 · ${new Date().getFullYear()}</p>
+      </div>
+    </div>`;
+}
+
+// ── Quiz view ──────────────────────────────────────────────────────────────────
+// Zwei Modi: Foto-Quiz und Specs-Quiz. Bestserie wird pro Modus gespeichert.
+const QUIZ_BEST_KEYS = { photo: 'sd_quiz_best', specs: 'sd_quiz_best_specs' };
+
+// ── SM-2 Spaced Repetition (identische Logik wie LearningRecord in der iOS-App) ─
+// Pro (Modus, Typ) ein Record in localStorage: Fragenauswahl bevorzugt fällige
+// und noch nie gesehene Typen mit der niedrigsten Trefferquote – statt reinem
+// Zufall wiederholt das Quiz gezielt, was schlecht sitzt.
+const LEARN_KEY = 'sd_learn';
+const learnStore = (o => (o && typeof o === 'object' && !Array.isArray(o)) ? o : {})(
+  loadJson(LEARN_KEY, {})
+);
+
+function learnRec(mode, icao) {
+  const key = `${mode}:${icao}`;
+  if (!learnStore[key]) {
+    learnStore[key] = { ef: 2.5, interval: 1, reps: 0, next: 0,
+                        streak: 0, correct: 0, attempts: 0 };
+  }
+  return learnStore[key];
+}
+
+function recordLearnAnswer(mode, icao, correct) {
+  const rec = learnRec(mode, icao);
+  rec.attempts += 1;
+  if (correct) {
+    rec.correct += 1;
+    rec.streak += 1;
+    // Qualität aus der Serie ableiten (wie iOS): sicher sitzende Karten
+    // (Streak ≥ 3) lassen den EaseFactor wachsen → Intervalle dehnen sich.
+    const q = rec.streak >= 3 ? 5 : 4;
+    rec.ef = Math.max(1.3, rec.ef + 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02));
+    if (rec.reps === 0)      rec.interval = 1;
+    else if (rec.reps === 1) rec.interval = 6;
+    else                     rec.interval = Math.round(rec.interval * rec.ef);
+    rec.reps += 1;
+  } else {
+    rec.streak = 0; rec.reps = 0; rec.interval = 1;
+  }
+  rec.next = Date.now() + rec.interval * 86400000;   // Intervall in Tagen
+  localStorage.setItem(LEARN_KEY, JSON.stringify(learnStore));
+}
+
+// Nächstes Ziel nach SM-2-Priorität (Pendant zu LearnViewModel.pickAircraft):
+// 1. fällige/ungesehene Typen, niedrigste Trefferquote zuerst  2. sonst zufällig
+function pickQuizTarget(mode, excludeIcao) {
+  const pool = AIRCRAFT.filter(a => a.icaoCode !== excludeIcao);
+  const acc = a => {
+    const rec = learnStore[`${mode}:${a.icaoCode}`];
+    return rec && rec.attempts ? rec.correct / rec.attempts : 0;
+  };
+  const due = pool.filter(a => {
+    const rec = learnStore[`${mode}:${a.icaoCode}`];
+    return !rec || rec.next <= Date.now();
+  });
+  if (due.length) return due.reduce((worst, a) => acc(a) < acc(worst) ? a : worst);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ── Specs-Quiz: Kennzahl → Typ (Pendant zur iOS-SpecsQuizView) ──────────────────
+const SPEC_QUESTIONS = [
+  { label: 'Spannweite',            get: a => `${fmt(a.wingspan, 1)} m` },
+  { label: 'Länge',                 get: a => `${fmt(a.length, 1)} m` },
+  { label: 'MTOW',                  get: a => `${fmt(a.mtow / 1000, 1)} t` },
+  { label: 'Reichweite',            get: a => `${fmt(a.range)} km` },
+  { label: 'Reisegeschwindigkeit',  get: a => `${fmt(a.cruiseSpeed)} km/h` },
+  { label: 'Passagierkapazität',    get: a => `${fmt(a.passengerCapacity)} Pax` },
+];
+
+// Distraktoren mit IDENTISCHEM Anzeigewert sind ausgeschlossen –
+// sonst gäbe es zwei "richtige" Antworten.
+function buildSpecOptions(answer, spec) {
+  const val = spec.get(answer);
+  const looks = shuffle((answer.lookalikes || []).map(find).filter(Boolean)
+    .filter(a => a.icaoCode !== answer.icaoCode));
+  const rest = shuffle(AIRCRAFT.filter(a => a.icaoCode !== answer.icaoCode));
+  const distractors = [];
+  for (const a of [...looks, ...rest]) {
+    if (distractors.length >= 3) break;
+    if (distractors.some(d => d.icaoCode === a.icaoCode)) continue;
+    if (spec.get(a) === val) continue;
+    distractors.push(a);
+  }
+  return shuffle([answer, ...distractors]);
+}
+
+// Fisher-Yates Shuffle (nicht-mutierend)
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// 4 Antwortoptionen: richtige Antwort + bis zu 3 Distraktoren.
+// Bevorzugt die Verwechslungspartner (lookalikes) → didaktisch wertvoller,
+// danach mit zufälligen weiteren Typen aufgefüllt.
+function buildQuizOptions(answer) {
+  const distractors = [];
+  const looks = (answer.lookalikes || [])
+    .map(find).filter(Boolean)
+    .filter(a => a.icaoCode !== answer.icaoCode);
+
+  for (const a of shuffle(looks)) {
+    if (distractors.length < 3 && !distractors.some(d => d.icaoCode === a.icaoCode)) {
+      distractors.push(a);
+    }
+  }
+  if (distractors.length < 3) {
+    const rest = shuffle(AIRCRAFT.filter(a =>
+      a.icaoCode !== answer.icaoCode &&
+      !distractors.some(d => d.icaoCode === a.icaoCode)));
+    for (const a of rest) {
+      if (distractors.length < 3) distractors.push(a);
+    }
+  }
+  return shuffle([answer, ...distractors.slice(0, 3)]);
+}
+
+// Neue Frage – Score/Serie/Bestwert bleiben über die Session erhalten.
+// Zielauswahl per SM-2 (fällige Typen zuerst); die vorherige Antwort wird
+// ausgeschlossen: nie zweimal dieselbe Frage in Folge.
+function newQuizRound() {
+  const mode = state.quizMode;
+  const prevAnswer = state.quiz ? state.quiz.answer : null;
+  const answer = pickQuizTarget(mode, prevAnswer);
+  const specIdx = mode === 'specs'
+    ? Math.floor(Math.random() * SPEC_QUESTIONS.length) : null;
+  const spec = specIdx !== null ? SPEC_QUESTIONS[specIdx] : null;
+
+  // Session-Statistik bleibt nur innerhalb desselben Modus erhalten.
+  const prev = (state.quiz && state.quiz.mode === mode) ? state.quiz : {
+    score: 0, total: 0, streak: 0,
+    best: parseInt(localStorage.getItem(QUIZ_BEST_KEYS[mode]) || '0', 10),
+  };
+  state.quiz = {
+    mode,
+    answer: answer.icaoCode,
+    specIdx,
+    options: (spec ? buildSpecOptions(answer, spec) : buildQuizOptions(answer))
+      .map(a => a.icaoCode),
+    picked: null,
+    score: prev.score,
+    total: prev.total,
+    streak: prev.streak,
+    best: prev.best,
+  };
+  renderQuiz();
+}
+
+function answerQuiz(icao) {
+  const q = state.quiz;
+  if (!q || q.picked) return;          // Doppel-Taps ignorieren
+  q.picked = icao;
+  q.total += 1;
+  const correct = icao === q.answer;
+  if (correct) {
+    q.score += 1;
+    q.streak += 1;
+    if (q.streak > q.best) {
+      q.best = q.streak;
+      localStorage.setItem(QUIZ_BEST_KEYS[q.mode], String(q.best));
+    }
+  } else {
+    q.streak = 0;
+  }
+  recordLearnAnswer(q.mode, q.answer, correct);   // SM-2-Fortschritt persistieren
+  renderQuiz();
+}
+
+function renderQuiz() {
+  if (!state.quiz || state.quiz.mode !== state.quizMode) { newQuizRound(); return; }
+  const q = state.quiz;
+  const answer = find(q.answer);
+  const spec = q.specIdx !== null ? SPEC_QUESTIONS[q.specIdx] : null;
+  const answered = q.picked !== null;
+  const correct = answered && q.picked === q.answer;
+  const acc = q.total ? Math.round(q.score / q.total * 100) : 0;
+
+  const optionsHtml = q.options.map(code => {
+    const a = find(code);
+    let cls = 'quiz-option';
+    if (answered) {
+      if (code === q.answer) cls += ' correct';
+      else if (code === q.picked) cls += ' wrong';
+      else cls += ' dim';
+    }
+    return `<button class="${cls}" data-quiz-pick="${code}"${answered ? ' disabled' : ''}>
+      <span class="qo-name">${a.variant}</span>
+      <span class="qo-mfr">${a.manufacturer}</span>
+    </button>`;
+  }).join('');
+
+  // role="status": Screenreader lesen das Ergebnis nach der Antwort vor.
+  // Im Specs-Modus dient die Kennzahl in der Auflösung als Merkhilfe.
+  const specHint = spec && answered && !correct
+    ? ` <span class="quiz-spec-hint">(${spec.label}: ${spec.get(answer)})</span>` : '';
+  const feedbackText = answered
+    ? `<div class="quiz-feedback ${correct ? 'ok' : 'no'}" role="status">
+        ${correct ? '✓ Richtig!' : `✗ Es ist die <b>${answer.variant}</b>${specHint}`}
+       </div>`
+    : `<p class="quiz-hint">${spec ? 'Zu welchem Typ gehört dieser Wert?' : 'Welcher Flugzeugtyp ist das?'}</p>`;
+
+  const nextBtn = answered
+    ? `<button class="quiz-next" id="quiz-next">Nächste Frage →</button>` : '';
+
+  // Bühne: Specs-Modus zeigt die Kennzahl, Foto-Modus das Wikimedia-Foto
+  // (fällt offline / bei Ladefehler automatisch auf die Silhouette zurück).
+  const photoName = spec ? null : WIKI_PHOTO[answer.icaoCode];
+  const stageHtml = spec
+    ? `<div class="quiz-spec-card">
+         <div class="quiz-spec-label">${spec.label}</div>
+         <div class="quiz-spec-value">${spec.get(answer)}</div>
+       </div>`
+    : photoName
+    ? `<div class="quiz-photo-wrap">
+         <img id="quiz-photo" class="quiz-photo" alt="Welcher Flugzeugtyp ist das?"
+              src="${commonsImg(photoName)}">
+         <canvas id="quiz-canvas" width="240" height="240" class="quiz-fallback" hidden></canvas>
+         <span class="quiz-credit" id="quiz-credit"></span>
+       </div>`
+    : `<div class="silhouette-wrap quiz-silhouette">
+         <canvas id="quiz-canvas" width="240" height="240"></canvas>
+       </div>`;
+
+  const modeSwitch = `
+    <div class="quiz-modes" role="group" aria-label="Quiz-Modus">
+      <button class="chip${q.mode === 'photo' ? ' active' : ''}" data-quiz-mode="photo"
+        aria-pressed="${q.mode === 'photo'}">📷 Foto</button>
+      <button class="chip${q.mode === 'specs' ? ' active' : ''}" data-quiz-mode="specs"
+        aria-pressed="${q.mode === 'specs'}">📋 Specs</button>
+    </div>`;
+
+  appEl.innerHTML = `
+    <div id="view-quiz" class="view active">
+      <div class="view-header">
+        <h1 class="view-title">Quiz</h1>
+        ${modeSwitch}
+        <div class="quiz-stats">
+          <div class="qstat"><span class="qstat-val">${q.score}/${q.total}</span><span class="qstat-lbl">Richtig · ${acc}%</span></div>
+          <div class="qstat"><span class="qstat-val">${q.streak}</span><span class="qstat-lbl">Serie</span></div>
+          <div class="qstat"><span class="qstat-val">${q.best}</span><span class="qstat-lbl">Bestserie</span></div>
+        </div>
+      </div>
+      <div class="quiz-body">
+        ${stageHtml}
+        ${feedbackText}
+        <div class="quiz-options">${optionsHtml}</div>
+        ${nextBtn}
+      </div>
+    </div>`;
+
+  // Foto laden + Bildnachweis; bei Fehler Silhouette als Fallback zeichnen.
+  if (photoName) {
+    const img = document.getElementById('quiz-photo');
+    const canvas = document.getElementById('quiz-canvas');
+    if (img) {
+      img.onerror = () => {            // offline / Bild nicht ladbar → Silhouette
+        img.hidden = true;
+        if (canvas) { canvas.hidden = false; drawSilhouette(canvas, answer, '#6E7681'); }
+      };
+    }
+    // Attribution live laden. Urheber + Lizenz verraten den Typ nicht; die
+    // Quelle-URL (Dateiname enthält Typ) erst NACH der Antwort einblenden.
+    const creditEl = document.getElementById('quiz-credit');
+    if (creditEl) {
+      fetchCommonsCredit(photoName).then(c => {
+        if (!c) return;
+        // Urheber via textContent (Remote-Daten), Quelle-Link als DOM-Element.
+        creditEl.textContent = `© ${c.artist} · ${c.license}`;
+        if (answered) {
+          creditEl.appendChild(document.createTextNode(' · '));
+          const link = document.createElement('a');
+          link.href = commonsPage(photoName);
+          link.target = '_blank';
+          link.rel = 'noopener';
+          link.textContent = 'Quelle ↗';
+          creditEl.appendChild(link);
+        }
+      });
+    }
+  } else {
+    // Kein Foto vorhanden → neutrale Silhouette (Herstellerfarbe würde verraten)
+    requestAnimationFrame(() => {
+      const canvas = document.getElementById('quiz-canvas');
+      if (canvas) drawSilhouette(canvas, answer, '#6E7681');
+    });
+  }
+
+  if (answered) {
+    const next = document.getElementById('quiz-next');
+    if (next) next.addEventListener('click', newQuizRound);
+  }
+}
+
+// ── Compare helpers ────────────────────────────────────────────────────────────
+function toggleCompare(icao) {
+  const idx = state.compareList.indexOf(icao);
+  if (idx >= 0) {
+    state.compareList.splice(idx, 1);
+  } else if (state.compareList.length < 3) {
+    state.compareList.push(icao);
+  }
+  saveCompare();
+}
+
+// ── Picker sheet ───────────────────────────────────────────────────────────────
+function openPicker() {
+  pickerIn.value = '';
+  renderPickerList('');
+  pickerEl.classList.add('open');
+  history.pushState({ sdOverlay: 'picker' }, '');
+  requestAnimationFrame(() => pickerIn.focus());
+}
+
+// Wird von popstate aufgerufen (nie direkt).
+function closePicker() {
+  pickerEl.classList.remove('open');
+}
+
+function renderPickerList(q) {
+  const items = AIRCRAFT.filter(a => {
+    const lq = q.toLowerCase();
+    return !lq || a.variant.toLowerCase().includes(lq) || a.icaoCode.toLowerCase().includes(lq) || a.manufacturer.toLowerCase().includes(lq);
+  });
+  // Echte <button>s: per Tab fokussierbar, Enter/Space funktionieren nativ,
+  // "disabled" ist auch für Screenreader ein echter Zustand.
+  pickerList.innerHTML = items.map(a => {
+    const inCmp = state.compareList.includes(a.icaoCode);
+    const canAdd = !inCmp && state.compareList.length < 3;
+    return `<button type="button" class="picker-item${(!canAdd && !inCmp) ? ' disabled' : ''}"
+              data-pickadd="${a.icaoCode}"${(!canAdd && !inCmp) ? ' disabled' : ''}>
+      <div class="picker-item-dot" style="background:${mfrColor(a.manufacturer)}"></div>
+      <div class="picker-item-text">
+        <div class="pname">${a.variant}${inCmp ? ' ✓' : ''}</div>
+        <div class="picao">${a.manufacturer} · ${a.icaoCode}</div>
+      </div>
+    </button>`;
+  }).join('') || '<div style="padding:var(--sp-m);color:var(--text2)">Keine Ergebnisse</div>';
+}
+
+// ── Routing / tab switch ───────────────────────────────────────────────────────
+function switchTab(tab) {
+  state.tab = tab;
+  tabs.forEach(t => {
+    const active = t.dataset.tab === tab;
+    t.classList.toggle('active', active);
+    // aria-current: aktiver Tab ist auch für Screenreader erkennbar
+    if (active) t.setAttribute('aria-current', 'page');
+    else t.removeAttribute('aria-current');
+  });
+  if (tab === 'database') renderDatabase();
+  else if (tab === 'compare') renderCompare();
+  else if (tab === 'quiz') renderQuiz();
+  else renderInfo();
+}
+
+// ── Event delegation ───────────────────────────────────────────────────────────
+document.getElementById('tab-bar').addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if (tab) switchTab(tab.dataset.tab);
+});
+
+appEl.addEventListener('click', e => {
+  // Quiz answer pick
+  const quizPick = e.target.closest('[data-quiz-pick]');
+  if (quizPick) {
+    answerQuiz(quizPick.dataset.quizPick);
+    return;
+  }
+
+  // Quiz-Modus-Umschalter (muss VOR dem generischen .chip-Handler stehen)
+  const modeBtn = e.target.closest('[data-quiz-mode]');
+  if (modeBtn) {
+    if (state.quizMode !== modeBtn.dataset.quizMode) {
+      state.quizMode = modeBtn.dataset.quizMode;
+      state.quiz = null;   // neue Runde im neuen Modus (Session-Stats pro Modus)
+      renderQuiz();
+    }
+    return;
+  }
+
+  // Favoriten-Filter-Chip
+  const favChip = e.target.closest('[data-fav-filter]');
+  if (favChip) {
+    state.favOnly = !state.favOnly;
+    renderDatabase();
+    return;
+  }
+
+  // Manufacturer filter chip
+  const chip = e.target.closest('.chip');
+  if (chip) {
+    state.mfr = chip.dataset.mfr;
+    renderDatabase();
+    return;
+  }
+
+  // Add-to-compare button (stop propagation to card)
+  const addBtn = e.target.closest('[data-add]');
+  if (addBtn) {
+    e.stopPropagation();
+    toggleCompare(addBtn.dataset.add);
+    renderDatabase();
+    return;
+  }
+
+  // Aircraft card tap → detail
+  const card = e.target.closest('.aircraft-card');
+  if (card) {
+    openDetail(card.dataset.icao);
+    return;
+  }
+});
+
+// Tastatur: Enter/Space auf fokussierter Karte öffnet die Detailansicht
+// (Karten sind div[role=button] – ohne das täte die Tastatur nichts).
+appEl.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const card = e.target.closest('.aircraft-card');
+  if (card) {
+    e.preventDefault();
+    openDetail(card.dataset.icao);
+  }
+});
+
+// Overlays: Browser-/Android-Back und Escape schließen Picker bzw. Detail.
+window.addEventListener('popstate', () => {
+  if (pickerEl.classList.contains('open')) { closePicker(); return; }
+  if (detailEl.classList.contains('open')) { closeDetailLevel(); }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (pickerEl.classList.contains('open') || detailEl.classList.contains('open')) {
+    history.back();
+  }
+});
+
+// Picker events (Schließen läuft über history.back → popstate → closePicker,
+// damit der History-Eintrag von openPicker wieder verschwindet)
+document.getElementById('picker-backdrop').addEventListener('click', () => history.back());
+pickerIn.addEventListener('input', () => renderPickerList(pickerIn.value));
+pickerList.addEventListener('click', e => {
+  const item = e.target.closest('[data-pickadd]');
+  if (!item) return;
+  const icao = item.dataset.pickadd;
+  if (!state.compareList.includes(icao) && state.compareList.length < 3) {
+    toggleCompare(icao);
+    if (state.compareList.length >= 3) history.back();
+    else renderPickerList(pickerIn.value);
+    if (state.tab === 'compare') renderCompare();
+  }
+});
+
+// Service Worker registration
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────────
+switchTab('database');

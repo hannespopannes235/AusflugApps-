@@ -1,0 +1,23 @@
+{
+  "_comment": "Klassen-Definition für den SpotterDex Core-ML-Bildklassifikator. Das Label (Schlüssel) ist der ICAO-Code und MUSS exakt mit aircraft_seed_v1.json übereinstimmen, da SpotViewModel den Modell-Output per ICAO-Code mit der SwiftData-DB verknüpft. 'category' = Wikimedia-Commons-Kategorie, aus der CC-lizenzierte Trainingsbilder geladen werden.",
+  "classes": {
+    "BCS3": { "name": "Airbus A220-300",      "category": "Airbus A220-300" },
+    "A20N": { "name": "Airbus A320neo",       "category": "Airbus A320neo" },
+    "A21N": { "name": "Airbus A321neo",       "category": "Airbus A321neo" },
+    "A333": { "name": "Airbus A330-300",      "category": "Airbus A330-300" },
+    "A359": { "name": "Airbus A350-900",      "category": "Airbus A350-900" },
+    "A388": { "name": "Airbus A380",          "category": "Airbus A380-800" },
+    "B738": { "name": "Boeing 737-800",       "category": "Boeing 737-800" },
+    "B38M": { "name": "Boeing 737 MAX 8",     "category": "Boeing 737 MAX 8" },
+    "B748": { "name": "Boeing 747-8I",        "category": "Boeing 747-8I" },
+    "B763": { "name": "Boeing 767-300ER",     "category": "Boeing 767-300" },
+    "B77W": { "name": "Boeing 777-300ER",     "category": "Boeing 777-300ER" },
+    "B789": { "name": "Boeing 787-9",         "category": "Boeing 787-9" },
+    "E190": { "name": "Embraer 190",          "category": "Embraer 190" },
+    "E295": { "name": "Embraer 195-E2",       "category": "Embraer 195-E2" },
+    "AT76": { "name": "ATR 72-600",           "category": "ATR 72-600" },
+    "CRJ9": { "name": "Bombardier CRJ900",    "category": "Bombardier CRJ-900" },
+    "DH8D": { "name": "Bombardier Dash 8 Q400","category": "Bombardier Dash 8 Q400" },
+    "F100": { "name": "Fokker 100",           "category": "Fokker 100" }
+  }
+}
