@@ -1,11 +1,12 @@
 'use strict';
 
-const CACHE = 'spotterdex-v6';
+const CACHE = 'spotterdex-v7';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
+  './data.js',
   './manifest.json',
   './icon.svg',
   './apple-touch-icon.png',
