@@ -57,6 +57,13 @@ button { cursor: pointer; border: none; background: none; font: inherit; color: 
 input  { font: inherit; color: inherit; border: none; outline: none; background: none; width: 100%; }
 a      { color: var(--blue); text-decoration: none; }
 
+/* Tastatur-Fokus: sichtbarer Ring (ersetzt das entfernte input-outline) */
+.search-bar:focus-within,
+.picker-search-bar:focus-within { box-shadow: 0 0 0 2px var(--blue); }
+button:focus-visible,
+.aircraft-card:focus-visible,
+[role="button"]:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
 /* ── App shell ─────────────────────────────────────────────────────────────── */
 #app {
   height: calc(100dvh - 56px - env(safe-area-inset-bottom));
@@ -347,7 +354,7 @@ a      { color: var(--blue); text-decoration: none; }
   font-size: 11px; font-weight: 700; color: var(--text2);
   text-transform: uppercase; letter-spacing: .3px;
 }
-.cmp-th-variant { display: block; font-size: 12px; font-weight: 700; color: var(--text1); text-transform: none; letter-spacing: 0; }
+.cmp-th-variant { display: block; font-size: 12px; font-weight: 700; color: var(--text); text-transform: none; letter-spacing: 0; }
 .cmp-th-icao    { display: block; font-size: 10px; font-weight: 500; color: var(--text2); font-family: var(--font-mono, monospace); margin-top: 1px; }
 .val-best  { color: var(--green); font-weight: 700; }
 .val-worst { color: var(--amber); }
@@ -399,11 +406,13 @@ a      { color: var(--blue); text-decoration: none; }
 #picker-list   { overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .picker-item {
   display: flex; align-items: center; gap: var(--sp-m);
+  width: 100%; text-align: left;   /* Button-Reset: volle Breite, linksbündig */
   padding: 12px var(--sp-s);
   border-bottom: 1px solid var(--border);
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   transition: background .1s;
 }
+.picker-item:disabled { opacity: .4; cursor: default; }
 .picker-item:last-child { border-bottom: none; }
 .picker-item:active { background: var(--bg-input); border-radius: var(--r-btn); }
 .picker-item-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }

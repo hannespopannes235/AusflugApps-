@@ -29,7 +29,7 @@ const AIRCRAFT = [
       "Klassische Airbus-Nase mit abgeflachter Unterseite",
       "Keine Triebwerksabflachung unten (Gegensatz zu B737 NG)"
     ],
-    lookalikes: ["B738", "BCS3", "A20N"]
+    lookalikes: ["B738", "BCS3", "A21N"]
   },
   {
     manufacturer: "Airbus", family: "A350", variant: "A350-900",
@@ -274,11 +274,21 @@ const AIRCRAFT = [
 ];
 
 // ── State ──────────────────────────────────────────────────────────────────────
+// Korrupte localStorage-Werte dürfen den App-Start nicht crashen.
+function loadJson(key, fallback) {
+  try {
+    const v = JSON.parse(localStorage.getItem(key));
+    return v ?? fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
 const state = {
   tab: 'database',
   search: '',
   mfr: '',
-  compareList: JSON.parse(localStorage.getItem('sd_compare') || '[]'),
+  compareList: (arr => Array.isArray(arr) ? arr : [])(loadJson('sd_compare', [])),
   detailStack: [],   // ICAO stack for back navigation
   quiz: null,        // {answer, options[], picked, score, total, streak, best}
 };
@@ -294,6 +304,14 @@ const tabs      = document.querySelectorAll('.tab');
 // ── Utils ──────────────────────────────────────────────────────────────────────
 const find = icao => AIRCRAFT.find(a => a.icaoCode === icao);
 const manufacturers = [...new Set(AIRCRAFT.map(a => a.manufacturer))].sort();
+
+// HTML-Escaping für alles, was nicht aus unserem eigenen Code stammt
+// (Sucheingaben, Remote-Daten wie Commons-Urheber).
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
 function mfrColor(m) {
   return { Airbus: '#0077CC', Boeing: '#CC2200', Embraer: '#12A642', ATR: '#E65100' }[m] || '#4D5259';
@@ -316,7 +334,7 @@ function engineBadge(type, count) {
 }
 
 function fmt(n, dec = 0) {
-  if (!n) return '–';
+  if (n == null || Number.isNaN(n)) return '–';   // 0 ist ein legitimer Wert
   return n.toLocaleString('de-DE', { maximumFractionDigits: dec });
 }
 
@@ -365,7 +383,11 @@ const commonsApi  = n => `https://commons.wikimedia.org/w/api.php?action=query&f
   `&prop=imageinfo&iiprop=extmetadata&iiextmetadatafilter=Artist|LicenseShortName|LicenseUrl&titles=File:${encodeURIComponent(n)}`;
 
 // Urheber & Lizenz live aus Commons holen → {artist, license} oder null (offline).
+// In-Memory-Cache: identische Dateien (Quiz-Re-Render, erneuter Detail-Besuch)
+// lösen keinen zweiten API-Call aus.
+const creditCache = new Map();
 async function fetchCommonsCredit(name) {
+  if (creditCache.has(name)) return creditCache.get(name);
   try {
     const r = await fetch(commonsApi(name));
     const j = await r.json();
@@ -375,9 +397,11 @@ async function fetchCommonsCredit(name) {
     const strip = h => (h || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
     const artist = strip(ext.Artist && ext.Artist.value) || 'Unbekannt';
     const license = strip(ext.LicenseShortName && ext.LicenseShortName.value) || '';
-    return { artist, license };
+    const credit = { artist, license };
+    creditCache.set(name, credit);
+    return credit;
   } catch (e) {
-    return null;
+    return null;   // offline → bewusst NICHT cachen, nächster Versuch darf klappen
   }
 }
 
@@ -482,10 +506,11 @@ async function renderPhoto(icao) {
       <div class="photo-actions">
         <button class="photo-btn" data-photo-pick>Eigenes Foto hinzufügen</button>
       </div>`;
-    // Echte Attribution live nachladen (keine erfundenen Angaben)
+    // Echte Attribution live nachladen (keine erfundenen Angaben).
+    // textContent statt innerHTML: Der Urheber-String kommt von extern.
     fetchCommonsCredit(wiki).then(c => {
       const el = document.getElementById('photo-credit');
-      if (el && c) el.innerHTML = `Foto: ${c.artist}${c.license ? ' · ' + c.license : ''} · Wikimedia ↗`;
+      if (el && c) el.textContent = `Foto: ${c.artist}${c.license ? ' · ' + c.license : ''} · Wikimedia ↗`;
     });
   } else {
     wrap.innerHTML = `
@@ -585,16 +610,11 @@ function drawSilhouette(canvas, ac, color) {
 }
 
 // ── Database view ──────────────────────────────────────────────────────────────
-function renderDatabase() {
+// Nur die Karten-Liste (ohne Header/Suchfeld) als HTML bauen – wird beim Tippen
+// separat aktualisiert, damit das Suchfeld fokussiert und der Cursor stehen bleibt.
+function buildAircraftListHtml() {
   const list = filteredAircraft();
-
-  const chipsHtml = ['', ...manufacturers].map(m =>
-    `<button class="chip${state.mfr === m ? ' active' : ''}" data-mfr="${m}">
-      ${m || 'Alle'}
-    </button>`
-  ).join('');
-
-  const cardsHtml = list.length
+  return list.length
     ? list.map(a => {
         const inCmp = state.compareList.includes(a.icaoCode);
         return `
@@ -627,6 +647,15 @@ function renderDatabase() {
         <div class="empty-title">Keine Treffer</div>
         <p>Versuche einen anderen Suchbegriff oder filter.</p>
       </div>`;
+}
+
+function renderDatabase() {
+  const chipsHtml = ['', ...manufacturers].map(m =>
+    `<button class="chip${state.mfr === m ? ' active' : ''}" data-mfr="${esc(m)}"
+      aria-pressed="${state.mfr === m}">
+      ${esc(m) || 'Alle'}
+    </button>`
+  ).join('');
 
   appEl.innerHTML = `
     <div id="view-database" class="view active">
@@ -635,32 +664,43 @@ function renderDatabase() {
         <div class="search-bar">
           <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input type="search" id="search-input" placeholder="Typ, Hersteller, ICAO …"
-            value="${state.search}" autocomplete="off" autocorrect="off">
+            value="${esc(state.search)}" autocomplete="off" autocorrect="off"
+            aria-label="Flugzeugtyp suchen">
         </div>
         <div class="filter-chips">${chipsHtml}</div>
       </div>
-      <div class="aircraft-list">${cardsHtml}</div>
+      <div class="aircraft-list">${buildAircraftListHtml()}</div>
     </div>`;
 
-  // bind search
+  // Beim Tippen NUR die Liste neu rendern – Suchfeld/Fokus/Cursor bleiben stehen.
   document.getElementById('search-input').addEventListener('input', e => {
     state.search = e.target.value;
-    renderDatabase();
-    document.getElementById('search-input').focus();
+    const listEl = appEl.querySelector('.aircraft-list');
+    if (listEl) listEl.innerHTML = buildAircraftListHtml();
   });
 }
 
 // ── Detail view ────────────────────────────────────────────────────────────────
+// openDetail = Navigation (Stack + Browser-History), renderDetail = reines Rendering.
+// So kann der Vergleich-Button neu rendern, ohne den Stack zu verfälschen, und
+// der Browser-/Android-Back-Button schließt das Overlay statt die App zu verlassen.
 function openDetail(icao) {
   const a = find(icao);
   if (!a) return;
   state.detailStack.push(icao);
+  history.pushState({ sdOverlay: 'detail', depth: state.detailStack.length }, '');
+  renderDetail(icao);
+}
+
+function renderDetail(icao) {
+  const a = find(icao);
+  if (!a) return;
 
   const inCmp = state.compareList.includes(icao);
   const color = mfrColor(a.manufacturer);
 
   const lookalikesHtml = (a.lookalikes || [])
-    .filter(code => find(code))
+    .filter(code => code !== a.icaoCode && find(code))   // keine Selbstreferenzen
     .map(code => `<button class="lookalike-chip" data-icao="${code}">${find(code).variant}</button>`)
     .join('') || '<span style="color:var(--text2);font-size:14px">Keine Einträge in der Datenbank</span>';
 
@@ -751,26 +791,28 @@ function openDetail(icao) {
   // Foto laden (eigenes Foto > Wikimedia > nur Button)
   renderPhoto(icao);
 
-  // Events
-  document.getElementById('detail-back').addEventListener('click', closeDetail);
+  // Events – "Zurück" geht über die Browser-History, damit UI-Button,
+  // Hardware-Back und Escape-Taste denselben Pfad nehmen (popstate).
+  document.getElementById('detail-back').addEventListener('click', () => history.back());
   document.getElementById('detail-cta-btn').addEventListener('click', () => {
     toggleCompare(icao);
-    openDetail(icao);   // re-render to update button
-    state.detailStack.pop(); // openDetail pushed again, remove duplicate
+    renderDetail(icao);   // reines Re-Render, Stack bleibt unangetastet
   });
   detailEl.querySelectorAll('.lookalike-chip').forEach(btn => {
     btn.addEventListener('click', () => openDetail(btn.dataset.icao));
   });
 
   detailEl.classList.add('open');
+  detailEl.scrollTop = 0;                                // immer oben starten
+  const backBtn = document.getElementById('detail-back');
+  if (backBtn) backBtn.focus();                          // Fokus ins Overlay holen
 }
 
-function closeDetail() {
+// Wird von popstate aufgerufen (nie direkt) – eine Ebene zurück.
+function closeDetailLevel() {
   state.detailStack.pop();
   if (state.detailStack.length > 0) {
-    // go back to previous
-    const prev = state.detailStack.pop();
-    openDetail(prev);
+    renderDetail(state.detailStack[state.detailStack.length - 1]);
   } else {
     detailEl.classList.remove('open');
     setTimeout(() => { detailEl.innerHTML = ''; }, 300);
@@ -940,7 +982,7 @@ function renderInfo() {
           <div class="info-card-title">iOS-App</div>
           <p>SpotterDex ist auch als native iOS-App (SwiftUI, iOS 17+) verfügbar – mit on-device ML-Erkennung per Foto und Spaced-Repetition-Lernmodi.</p>
         </div>
-        <p class="info-version">SpotterDex Web v1.4 · ${new Date().getFullYear()}</p>
+        <p class="info-version">SpotterDex Web v1.5 · ${new Date().getFullYear()}</p>
       </div>
     </div>`;
 }
@@ -984,8 +1026,11 @@ function buildQuizOptions(answer) {
 }
 
 // Neue Frage – Score/Serie/Bestwert bleiben über die Session erhalten.
+// Die vorherige Antwort wird ausgeschlossen: nie zweimal dieselbe Frage in Folge.
 function newQuizRound() {
-  const answer = AIRCRAFT[Math.floor(Math.random() * AIRCRAFT.length)];
+  const prevAnswer = state.quiz ? state.quiz.answer : null;
+  const pool = AIRCRAFT.filter(a => a.icaoCode !== prevAnswer);
+  const answer = pool[Math.floor(Math.random() * pool.length)];
   const prev = state.quiz || {
     score: 0, total: 0, streak: 0,
     best: parseInt(localStorage.getItem(QUIZ_BEST_KEY) || '0', 10),
@@ -1042,8 +1087,9 @@ function renderQuiz() {
     </button>`;
   }).join('');
 
+  // role="status": Screenreader lesen das Ergebnis nach der Antwort vor.
   const feedbackText = answered
-    ? `<div class="quiz-feedback ${correct ? 'ok' : 'no'}">
+    ? `<div class="quiz-feedback ${correct ? 'ok' : 'no'}" role="status">
         ${correct ? '✓ Richtig!' : `✗ Es ist die <b>${answer.variant}</b>`}
        </div>`
     : `<p class="quiz-hint">Welcher Flugzeugtyp ist das?</p>`;
@@ -1099,10 +1145,17 @@ function renderQuiz() {
     if (creditEl) {
       fetchCommonsCredit(photoName).then(c => {
         if (!c) return;
-        const src = answered
-          ? ` · <a href="${commonsPage(photoName)}" target="_blank" rel="noopener">Quelle ↗</a>`
-          : '';
-        creditEl.innerHTML = `© ${c.artist} · ${c.license}${src}`;
+        // Urheber via textContent (Remote-Daten), Quelle-Link als DOM-Element.
+        creditEl.textContent = `© ${c.artist} · ${c.license}`;
+        if (answered) {
+          creditEl.appendChild(document.createTextNode(' · '));
+          const link = document.createElement('a');
+          link.href = commonsPage(photoName);
+          link.target = '_blank';
+          link.rel = 'noopener';
+          link.textContent = 'Quelle ↗';
+          creditEl.appendChild(link);
+        }
       });
     }
   } else {
@@ -1135,9 +1188,11 @@ function openPicker() {
   pickerIn.value = '';
   renderPickerList('');
   pickerEl.classList.add('open');
+  history.pushState({ sdOverlay: 'picker' }, '');
   requestAnimationFrame(() => pickerIn.focus());
 }
 
+// Wird von popstate aufgerufen (nie direkt).
 function closePicker() {
   pickerEl.classList.remove('open');
 }
@@ -1147,24 +1202,32 @@ function renderPickerList(q) {
     const lq = q.toLowerCase();
     return !lq || a.variant.toLowerCase().includes(lq) || a.icaoCode.toLowerCase().includes(lq) || a.manufacturer.toLowerCase().includes(lq);
   });
+  // Echte <button>s: per Tab fokussierbar, Enter/Space funktionieren nativ,
+  // "disabled" ist auch für Screenreader ein echter Zustand.
   pickerList.innerHTML = items.map(a => {
     const inCmp = state.compareList.includes(a.icaoCode);
     const canAdd = !inCmp && state.compareList.length < 3;
-    return `<div class="picker-item${(!canAdd && !inCmp) ? ' disabled' : ''}"
-              data-pickadd="${a.icaoCode}" style="opacity:${!canAdd && !inCmp ? '.4' : '1'}">
+    return `<button type="button" class="picker-item${(!canAdd && !inCmp) ? ' disabled' : ''}"
+              data-pickadd="${a.icaoCode}"${(!canAdd && !inCmp) ? ' disabled' : ''}>
       <div class="picker-item-dot" style="background:${mfrColor(a.manufacturer)}"></div>
       <div class="picker-item-text">
         <div class="pname">${a.variant}${inCmp ? ' ✓' : ''}</div>
         <div class="picao">${a.manufacturer} · ${a.icaoCode}</div>
       </div>
-    </div>`;
+    </button>`;
   }).join('') || '<div style="padding:var(--sp-m);color:var(--text2)">Keine Ergebnisse</div>';
 }
 
 // ── Routing / tab switch ───────────────────────────────────────────────────────
 function switchTab(tab) {
   state.tab = tab;
-  tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  tabs.forEach(t => {
+    const active = t.dataset.tab === tab;
+    t.classList.toggle('active', active);
+    // aria-current: aktiver Tab ist auch für Screenreader erkennbar
+    if (active) t.setAttribute('aria-current', 'page');
+    else t.removeAttribute('aria-current');
+  });
   if (tab === 'database') renderDatabase();
   else if (tab === 'compare') renderCompare();
   else if (tab === 'quiz') renderQuiz();
@@ -1210,8 +1273,33 @@ appEl.addEventListener('click', e => {
   }
 });
 
-// Picker events
-document.getElementById('picker-backdrop').addEventListener('click', closePicker);
+// Tastatur: Enter/Space auf fokussierter Karte öffnet die Detailansicht
+// (Karten sind div[role=button] – ohne das täte die Tastatur nichts).
+appEl.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const card = e.target.closest('.aircraft-card');
+  if (card) {
+    e.preventDefault();
+    openDetail(card.dataset.icao);
+  }
+});
+
+// Overlays: Browser-/Android-Back und Escape schließen Picker bzw. Detail.
+window.addEventListener('popstate', () => {
+  if (pickerEl.classList.contains('open')) { closePicker(); return; }
+  if (detailEl.classList.contains('open')) { closeDetailLevel(); }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (pickerEl.classList.contains('open') || detailEl.classList.contains('open')) {
+    history.back();
+  }
+});
+
+// Picker events (Schließen läuft über history.back → popstate → closePicker,
+// damit der History-Eintrag von openPicker wieder verschwindet)
+document.getElementById('picker-backdrop').addEventListener('click', () => history.back());
 pickerIn.addEventListener('input', () => renderPickerList(pickerIn.value));
 pickerList.addEventListener('click', e => {
   const item = e.target.closest('[data-pickadd]');
@@ -1219,7 +1307,7 @@ pickerList.addEventListener('click', e => {
   const icao = item.dataset.pickadd;
   if (!state.compareList.includes(icao) && state.compareList.length < 3) {
     toggleCompare(icao);
-    if (state.compareList.length >= 3) closePicker();
+    if (state.compareList.length >= 3) history.back();
     else renderPickerList(pickerIn.value);
     if (state.tab === 'compare') renderCompare();
   }
